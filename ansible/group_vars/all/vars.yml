@@ -1,3 +1,5 @@
+---
+
 # This is the fully qualified domain name of your production server. Because
 # nginx checks this value against the URL being requested, it must be the same
 # as the server's DNS name. This value is overridden for Vagrant and staging
@@ -10,6 +12,13 @@ conf_dir: "{{nginx_dir}}/conf.d"
 
 # Nginx templated configuration files to create.
 shared:
-  - {file: gzip_params, directory: "{{nginx_dir}}"}
+  - {file: gzip_params.j2, dest: "{{nginx_dir}}/gzip_params"}
 confs:
-  - {file: site.conf, directory: "{{conf_dir}}"}
+  - {file: site.conf.j2, dest: "{{conf_dir}}/site.conf"}
+
+#nonsensitive data
+db_name: wptdash
+db_user: wptdash
+
+#sensitive data
+db_password: "{{ vault_db_password }}"

@@ -89,7 +89,7 @@ ENV/
 .ropeproject
 
 # Ansible retry
-/*.retry/
+*.retry
 
 # Config with secrets
 config.txt

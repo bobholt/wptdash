@@ -1,12 +1,18 @@
-import enum
+import configparser
 
 from flask import Flask, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from jsonschema import validate
 
+CONFIG = configparser.ConfigParser()
+CONFIG.readfp(open(r'config.txt'))
+WPTDASH_DB = CONFIG.get('postgresql', 'WPTDASH_DB')
+WPTDASH_DB_USER = CONFIG.get('postgresql', 'WPTDASH_DB_USER')
+WPTDASH_DB_PASS = CONFIG.get('postgresql', 'WPTDASH_DB_PASS')
+
 app = Flask("wptdash")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%s:%s@/%s' % (WPTDASH_DB_USER, WPTDASH_DB_PASS, WPTDASH_DB)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -17,7 +23,7 @@ def main():
 
 @app.route("/pull/<int:pull_id>")
 def pull_detail(pull_id):
-    import models
+    import wptdash.models
 
     pull = db.session.query(models.PullRequest).filter_by(id=pull_id).first()
     return render_template("pull.html", pull=pull)
@@ -25,7 +31,7 @@ def pull_detail(pull_id):
 
 @app.route("/api/stability", methods=["POST"])
 def add_stability_check():
-    import models
+    import wptdash.models
 
     schema = {
         "type": "object",
@@ -112,6 +118,11 @@ def add_stability_check():
 
     #TODO: make this return some useful JSON
     return "Created job %s" % job.id
+
+def init_db():
+    import wptdash.models
+
+    db.create_all()
 
 
 if __name__ == "__main__":

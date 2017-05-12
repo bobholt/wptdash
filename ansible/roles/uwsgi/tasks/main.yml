@@ -14,13 +14,21 @@
     state: directory
 
 - name: uwsgi.ini is loaded
-  template: src=wptdash_uwsgi.ini dest=/etc/uwsgi/vassals backup=no
+  template:
+    src: wptdash_uwsgi.ini.j2
+    dest: /etc/uwsgi/vassals/wptdash_uwsgi.ini
+    backup: no
 
 - name: emperor.ini is loaded
-  template: src=emperor.ini dest=/etc/uwsgi
+  template:
+    src: emperor.ini.j2
+    dest: /etc/uwsgi/emperor.ini
 
 - name: Emperor service is loaded
-  template: src=emperor.uwsgi.service dest=/etc/systemd/system backup=no
+  template:
+    src: emperor.uwsgi.service.j2
+    dest: /etc/systemd/system/emperor.uwsgi.service
+    backup: no
 
 - name: Start uwsgi-emperor
   systemd:

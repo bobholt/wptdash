@@ -1,0 +1,66 @@
+---
+
+- name: Add db config file to app
+  template:
+    src: config.txt.j2
+    dest: /home/wptdash/wptdash/wptdash/config.txt
+    backup: no
+
+- name: Add the PostgreSQL public GPG key to the apt repo
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add PostgreSQL to the sources list
+  apt_repository:
+    repo: 'deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main'
+    update_cache: yes
+    state: present
+
+- name: Install PostgreSQL
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    state: latest
+  with_items:
+    - libpq-dev
+    - postgresql-9.6
+    - postgresql-contrib-9.6
+    - postgresql-client-9.6
+
+- name: Install psycopg2
+  pip:
+    name: psycopg2
+    state: latest
+
+- name: Ensure the PostgreSQL service is running
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Ensure database is created
+  become_user: postgres
+  postgresql_db:
+    name: "{{ db_name }}"
+    encoding: 'UTF-8'
+    lc_collate: 'en_US.UTF-8'
+    lc_ctype: 'en_US.UTF-8'
+    template: 'template0'
+    state: present
+
+- name: Ensure user has access to the database
+  become_user: postgres
+  postgresql_user:
+    db: "{{ db_name }}"
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: ALL
+    state: present
+
+- name: Ensure user does not have unnecessary privileges
+  become_user: postgres
+  postgresql_user:
+    name: "{{ db_user }}"
+    role_attr_flags: NOSUPERUSER,NOCREATEDB
+    state: present
