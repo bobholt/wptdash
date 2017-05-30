@@ -3,12 +3,12 @@
 
 # process-related settings
 socket          = /tmp/wptdash.sock
-chdir           = /var/www/wptdash/wptdash
+chdir           = /var/www/wptdash
 master          = true
-module          = app:app
+module          = wptdash.prodapp:prod_app
 processes       = 5
-treads          = 1
-logger          = file:/var/www/wptdash/uwsgi.log
+logger          = file:/var/www/wptdash/logs/uwsgi.log
 vacuum          = true
+enable-threads  = true
 die-on-term     = true
 virtualenv      = /home/wptdash/venv

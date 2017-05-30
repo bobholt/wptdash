@@ -17,3 +17,9 @@
     state: directory
     group: www-data
     recurse: yes
+
+- name: Install Flask App
+  pip:
+    name: /home/wptdash/wptdash
+    state: present
+    virtualenv: /home/wptdash/venv

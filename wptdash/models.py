@@ -1,7 +1,7 @@
 import enum
 import sys
 
-from app import db
+from wptdash.database import db
 
 class PRStatus(enum.Enum):
     open = 1

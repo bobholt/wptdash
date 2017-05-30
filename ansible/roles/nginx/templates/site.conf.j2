@@ -6,6 +6,9 @@ server {
   charset utf-8;
   client_max_body_size 75M;
 
+  access_log         /var/www/wptdash/logs/access.log;
+  error_log          /var/www/wptdash/logs/error.log;
+
   location = /robots.txt { access_log off; log_not_found off; }
   location = /favicon.ico { access_log off; log_not_found off; }
 
