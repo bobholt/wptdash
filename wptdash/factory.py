@@ -9,15 +9,14 @@
 """
 
 from flask import Flask, g
-from wptdash.config import config
 from wptdash.database import db
 from werkzeug.utils import find_modules, import_string
 
 
-def create_app(config_name='development'):
+def create_app(config=None):
     app = Flask('wptdash')
 
-    app.config.from_object(config[config_name])
+    app.config.update(config or {})
     app.config.from_envvar('WPTDASH_SETTINGS', silent=True)
 
     db.init_app(app)

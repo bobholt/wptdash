@@ -163,8 +163,6 @@ class Commit(db.Model):
                         nullable=False)
 
     builds = db.relationship('Build', back_populates='commit')
-    pull_requests = db.relationship('PullRequest',
-                                    back_populates='head_commit')
     user = db.relationship('GitHubUser', back_populates='commits')
 
 
@@ -232,7 +230,8 @@ class JobResult(db.Model):
 
     job = db.relationship('Job', back_populates='tests')
     test = db.relationship('Test', back_populates='jobs')
-    statuses = db.relationship('StabilityStatus')
+    statuses = db.relationship('StabilityStatus',
+                               primaryjoin="and_(foreign(JobResult.job_id)==remote(StabilityStatus.job_id), foreign(JobResult.test_id)==remote(StabilityStatus.test_id))")
 
 
 class Product(db.Model):
@@ -278,11 +277,11 @@ class PullRequest(db.Model):
     merger = db.relationship('GitHubUser', foreign_keys=[merged_by],
                              back_populates='merges')
     head_commit = db.relationship('Commit', foreign_keys=[head_sha],
-                                  back_populates='pull_requests')
+                                  backref='pull_requests')
     base_commit = db.relationship('Commit', foreign_keys=[base_sha])
     head_repository = db.relationship('Repository',
                                       foreign_keys=[head_repo_id],
-                                      back_populates='pull_requests')
+                                      backref='pull_requests')
     base_repository = db.relationship('Repository',
                                       foreign_keys=[base_repo_id])
     watchers = db.relationship('GitHubUser', secondary=USER_PR,
@@ -305,8 +304,6 @@ class Repository(db.Model):
                          nullable=False)
 
     owner = db.relationship('GitHubUser', back_populates='repositories')
-    pull_requests = db.relationship('PullRequest',
-                                    back_populates='head_repository')
 
 
 class StabilityStatus(db.Model):
