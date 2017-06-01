@@ -226,7 +226,7 @@ class JobResult(db.Model):
 
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'), primary_key=True)
     test_id = db.Column(db.Text, db.ForeignKey('test.id'), primary_key=True)
-    iterations = db.Column(db.Integer)
+    iterations = db.Column(db.Integer, nullable=False)
 
     job = db.relationship('Job', back_populates='tests')
     test = db.relationship('Test', back_populates='jobs')
@@ -265,10 +265,14 @@ class PullRequest(db.Model):
     merged = db.Column(db.Boolean, nullable=False)
     merged_by = db.Column(db.Integer, db.ForeignKey('github_user.id'))
     mirror_url = db.Column(db.String)
-    head_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
-    base_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
-    head_repo_id = db.Column(db.Integer, db.ForeignKey('repository.id'))
-    base_repo_id = db.Column(db.Integer, db.ForeignKey('repository.id'))
+    head_sha = db.Column(db.String, db.ForeignKey('commit.sha'),
+                         nullable=False)
+    base_sha = db.Column(db.String, db.ForeignKey('commit.sha'),
+                         nullable=False)
+    head_repo_id = db.Column(db.Integer, db.ForeignKey('repository.id'),
+                             nullable=False)
+    base_repo_id = db.Column(db.Integer, db.ForeignKey('repository.id'),
+                             nullable=False)
     created_at = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
     updated_at = db.Column(db.TIMESTAMP(timezone=True))
     merged_at = db.Column(db.TIMESTAMP(timezone=True))
@@ -319,8 +323,8 @@ class StabilityStatus(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, nullable=False)
     test_id = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.Enum(TestStatus))
-    count = db.Column(db.Integer)
+    status = db.Column(db.Enum(TestStatus), nullable=False)
+    count = db.Column(db.Integer, nullable=False)
 
     db.ForeignKeyConstraint(['job_id', 'test_id'],
                             ['job_result.job_id', 'job_result.test_id'])
