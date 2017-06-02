@@ -2,7 +2,6 @@ from datetime import datetime
 import pytest
 import sqlalchemy
 import wptdash.models as models
-from tests._conf import app, db, session
 
 
 class TestBuild(object):

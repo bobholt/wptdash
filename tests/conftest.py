@@ -13,21 +13,21 @@ TEST_DATABASE_URI = 'sqlite:///' + TESTDB_PATH
 @pytest.fixture(scope='session')
 def app(request):
     """Session-wide test `Flask` application."""
-    test_app = create_app(dict(
+    app = create_app(dict(
         DEBUG=True,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         SQLALCHEMY_DATABASE_URI=TEST_DATABASE_URI
     ))
 
     # Establish an application context before running the tests.
-    ctx = test_app.app_context()
-    ctx.push()
+    with app.app_context():
+        yield app
 
-    def teardown():
-        ctx.pop()
-
-    request.addfinalizer(teardown)
-    return test_app
+@pytest.fixture(scope='session')
+def client(app, request):
+    """Session-wide Flask test client."""
+    client = app.test_client()
+    return client
 
 
 @pytest.fixture(scope='session')
