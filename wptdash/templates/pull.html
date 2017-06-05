@@ -1,10 +1,18 @@
 <!doctype html>
 <meta charset=utf8>
 
-<title>Pull Request {{pull.id}} details</title>
+<title>Pull Request {{pull_id}} details</title>
 
-<h1>Pull Request {{pull.id}}</h1>
+<h1>Pull Request {{pull_id}}</h1>
 
+{% if not pull %}
+<p>
+  No information to display for Pull Request {{pull_id}}. Try checking
+  <a href="https://github.com/w3c/web-platform-tests/pull/{{pull_id}}">
+    GitHub
+  </a>
+</p>
+{% else %}
 <table>
   <tr>
     <th>Product
@@ -16,3 +24,4 @@
     <td>{{ job.status.name }}
   </tr>
 {% endfor %}
+{% endif %}

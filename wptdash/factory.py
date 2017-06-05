@@ -14,14 +14,19 @@ from werkzeug.utils import find_modules, import_string
 
 
 def create_app(config=None):
+    import wptdash.models as models
+
     app = Flask('wptdash')
 
     app.config.update(config or {})
     app.config.from_envvar('WPTDASH_SETTINGS', silent=True)
 
     db.init_app(app)
-    with app.app_context():
+
+    @app.before_request
+    def before_request():
         g.db = db
+        g.models = models
 
     register_blueprints(app)
     register_cli(app)
@@ -43,7 +48,6 @@ def register_cli(app):
     @app.cli.command('initdb')
     def init_db_command():
         """ Creates the database tables. """
-        import wptdash.models as models
-        g.models = models
+        import wptdash.models
         db.create_all()
         print ('Initialized the database')

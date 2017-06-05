@@ -19,12 +19,12 @@ def main():
     return "wpt dashboard"
 
 
-# @bp.route("/pull/<int:pull_id>")
-# def pull_detail(pull_id):
-#     db = g.db
-#     models = g.models
-#     pull = db.session.query(models.PullRequest).filter_by(id=pull_id).first()
-#     return render_template("pull.html", pull=pull)
+@bp.route("/pull/<int:pull_id>")
+def pull_detail(pull_id):
+    db = g.db
+    models = g.models
+    pull = db.session.query(models.PullRequest).filter_by(id=pull_id).first()
+    return render_template("pull.html", pull=pull, pull_id=pull_id)
 
 
 # @bp.route("/api/stability", methods=["POST"])
