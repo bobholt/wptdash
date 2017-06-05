@@ -6,22 +6,27 @@
 <h1>Pull Request {{pull_id}}</h1>
 
 {% if not pull %}
-<p>
-  No information to display for Pull Request {{pull_id}}. Try checking
-  <a href="https://github.com/w3c/web-platform-tests/pull/{{pull_id}}">
-    GitHub
-  </a>
-</p>
+  <p>
+    No information to display for Pull Request {{pull_id}}. Try checking
+    <a href="https://github.com/w3c/web-platform-tests/pull/{{pull_id}}">
+      GitHub
+    </a>
+  </p>
 {% else %}
-<table>
-  <tr>
-    <th>Product
-    <th>Status
-  </tr>
-{% for job in pull.stability_jobs %}
-  <tr>
-    <td>{{ job.product.name }}
-    <td>{{ job.status.name }}
-  </tr>
-{% endfor %}
+
+  {% if not pull.builds %}
+    <p>No builds yet for this pull request.</p>
+  {% else %}
+    <table>
+      <tr>
+        <th>Build Number</th>
+        <th>Status</th>
+      </tr>
+    {% for build in pull.builds %}
+      <tr>
+        <td>{{ build.number }}</td>
+        <td>{{ build.status.name }}</td>
+      </tr>
+    {% endfor %}
+  {% endif %}
 {% endif %}
