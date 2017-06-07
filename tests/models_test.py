@@ -466,4 +466,24 @@ class TestTest(object):
         tests = models.Test.query.all()
         assert test in tests
 
- # TODO: Test get_or_create function
+
+class TestGetOrCreate(object):
+
+    """Test the get_or_create function."""
+
+    def test_get(self, session):
+        """It should retrieve an existing object from the database."""
+        test = models.Test(id='foo')
+
+        session.add(test)
+        session.commit()
+
+        instance, _ = models.get_or_create(session, models.Test, id='foo')
+
+        assert instance and not _
+
+    def test_create(self, session):
+        """It should create and return a new object."""
+        instance, _ = models.get_or_create(session, models.Test, id='bar')
+
+        assert instance and _
