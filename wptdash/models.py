@@ -139,8 +139,8 @@ class Build(db.Model):
                                 db.ForeignKey('pull_request.id'))
     commit_id = db.Column(db.String, db.ForeignKey('commit.sha'))
     status = db.Column(db.Enum(BuildStatus), nullable=False)
-    started_at = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
-    finished_at = db.Column(db.TIMESTAMP(timezone=True))
+    started_at = db.Column(db.TIMESTAMP(), nullable=False)
+    finished_at = db.Column(db.TIMESTAMP())
 
     jobs = db.relationship('Job', back_populates='build')
     pull_request = db.relationship('PullRequest',
@@ -177,11 +177,10 @@ class GitHubUser(db.Model):
     __tablename__ = 'github_user'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    login = db.Column(db.String, nullable=False)
 
     prs_watching = db.relationship('PullRequest', secondary=USER_PR,
                                    back_populates='watchers')
-    merges = db.relationship('PullRequest', back_populates='merger')
     repositories = db.relationship('Repository', back_populates='owner')
     commits = db.relationship('Commit', back_populates='user')
 
@@ -204,8 +203,8 @@ class Job(db.Model):
     state = db.Column(db.Enum(JobStatus), nullable=False)
     error_message = db.Column(db.Text)
     allow_failure = db.Column(db.Boolean, nullable=False)
-    started_at = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
-    finished_at = db.Column(db.TIMESTAMP(timezone=True))
+    started_at = db.Column(db.TIMESTAMP(), nullable=False)
+    finished_at = db.Column(db.TIMESTAMP())
 
     build = db.relationship('Build', back_populates='jobs')
     product = db.relationship('Product', back_populates='jobs')
@@ -261,9 +260,8 @@ class PullRequest(db.Model):
     __tablename__ = 'pull_request'
 
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
     state = db.Column(db.Enum(PRStatus), nullable=False)
-    merged = db.Column(db.Boolean, nullable=False)
-    merged_by = db.Column(db.Integer, db.ForeignKey('github_user.id'))
     mirror_url = db.Column(db.String)
     head_sha = db.Column(db.String, db.ForeignKey('commit.sha'),
                          nullable=False)
@@ -273,13 +271,21 @@ class PullRequest(db.Model):
                              nullable=False)
     base_repo_id = db.Column(db.Integer, db.ForeignKey('repository.id'),
                              nullable=False)
-    created_at = db.Column(db.TIMESTAMP(timezone=True), nullable=False)
-    updated_at = db.Column(db.TIMESTAMP(timezone=True))
-    merged_at = db.Column(db.TIMESTAMP(timezone=True))
+    head_branch = db.Column(db.String, nullable=False)
+    base_branch = db.Column(db.String, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('github_user.id'))
+    created_at = db.Column(db.TIMESTAMP(), nullable=False)
+    merged = db.Column(db.Boolean, nullable=False)
+    merged_by = db.Column(db.Integer, db.ForeignKey('github_user.id'))
+    merged_at = db.Column(db.TIMESTAMP())
+    updated_at = db.Column(db.TIMESTAMP(), nullable=False)
+    closed_at = db.Column(db.TIMESTAMP())
 
     builds = db.relationship('Build', back_populates='pull_request')
+    creator = db.relationship('GitHubUser', foreign_keys=[created_by],
+                              backref='pulls')
     merger = db.relationship('GitHubUser', foreign_keys=[merged_by],
-                             back_populates='merges')
+                             backref='merges')
     head_commit = db.relationship('Commit', foreign_keys=[head_sha],
                                   backref='pull_requests')
     base_commit = db.relationship('Commit', foreign_keys=[base_sha])
