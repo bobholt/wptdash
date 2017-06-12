@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
     WPTDash
@@ -22,6 +23,8 @@ def create_app(config=None):
     app.config.from_envvar('WPTDASH_SETTINGS', silent=True)
 
     db.init_app(app)
+    with app.app_context():
+        db.create_all()
 
     @app.before_request
     def before_request():
@@ -29,25 +32,13 @@ def create_app(config=None):
         g.models = models
 
     register_blueprints(app)
-    register_cli(app)
 
     return app
 
 
 def register_blueprints(app):
     """ Registers all blueprint modules. """
-    for name in find_modules('wptdash.blueprints'):
-        mod = import_string(name)
-        if hasattr(mod, 'bp'):
-            app.register_blueprint(mod.bp)
+    import wptdash.blueprints.routes as mod
+    if hasattr(mod, 'bp'):
+        app.register_blueprint(mod.bp)
     return None
-
-
-def register_cli(app):
-    """ Registers CLI commands. """
-    @app.cli.command('initdb')
-    def init_db_command():
-        """ Creates the database tables. """
-        import wptdash.models
-        db.create_all()
-        print ('Initialized the database')

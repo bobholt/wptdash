@@ -3,6 +3,7 @@
   gather_facts: yes
   become: yes
   roles:
+    - config
     - db
     - nginx
     - flask

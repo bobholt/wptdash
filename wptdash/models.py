@@ -18,6 +18,8 @@ class BuildStatus(enum.Enum):
     BROKEN = 4
     FAILED = 5
     STILL_FAILING = 6
+    CANCELLED = 7
+    ERRORED = 8
 
     @classmethod
     def from_string(cls, status):
@@ -137,7 +139,8 @@ class Build(db.Model):
     number = db.Column(db.Integer, nullable=False)
     pull_request_id = db.Column(db.Integer,
                                 db.ForeignKey('pull_request.id'))
-    commit_id = db.Column(db.String, db.ForeignKey('commit.sha'))
+    head_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
+    base_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
     status = db.Column(db.Enum(BuildStatus), nullable=False)
     started_at = db.Column(db.TIMESTAMP(), nullable=False)
     finished_at = db.Column(db.TIMESTAMP())
@@ -145,7 +148,10 @@ class Build(db.Model):
     jobs = db.relationship('Job', back_populates='build')
     pull_request = db.relationship('PullRequest',
                                    back_populates='builds')
-    commit = db.relationship('Commit', back_populates='builds')
+    head_commit = db.relationship('Commit', foreign_keys=[head_sha],
+                                  backref='builds_as_head')
+    base_commit = db.relationship('Commit', foreign_keys=[base_sha],
+                                  backref='builds_as_base')
 
 
 class Commit(db.Model):
@@ -162,7 +168,6 @@ class Commit(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('github_user.id'),
                         nullable=False)
 
-    builds = db.relationship('Build', back_populates='commit')
     user = db.relationship('GitHubUser', back_populates='commits')
 
 
@@ -200,7 +205,7 @@ class Job(db.Model):
     build_id = db.Column(db.Integer, db.ForeignKey('build.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'),
                            nullable=False)
-    state = db.Column(db.Enum(JobStatus), nullable=False)
+    state = db.Column(db.Enum(JobStatus))
     error_message = db.Column(db.Text)
     allow_failure = db.Column(db.Boolean, nullable=False)
     started_at = db.Column(db.TIMESTAMP(), nullable=False)
@@ -260,6 +265,7 @@ class PullRequest(db.Model):
     __tablename__ = 'pull_request'
 
     id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String, nullable=False)
     state = db.Column(db.Enum(PRStatus), nullable=False)
     mirror_url = db.Column(db.String)
@@ -355,6 +361,10 @@ class Test(db.Model):
                                backref=db.backref('parent',
                                                   remote_side=[id]))
     jobs = db.relationship('JobResult', back_populates='test')
+
+
+def get(session, model, **kwargs):
+    return session.query(model).filter_by(**kwargs).first()
 
 
 def get_or_create(session, model, defaults=None, **kwargs):

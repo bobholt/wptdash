@@ -1,11 +1,5 @@
 ---
 
-- name: Add db config file to app
-  template:
-    src: config.txt.j2
-    dest: /home/wptdash/wptdash/config.txt
-    backup: no
-
 - name: Add the PostgreSQL public GPG key to the apt repo
   apt_key:
     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc

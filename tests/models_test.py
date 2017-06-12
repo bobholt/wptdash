@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from datetime import datetime
 import pytest
 import sqlalchemy
@@ -116,15 +118,6 @@ class TestJob(object):
         """A job without product_id should throw Integrity Error."""
         job = models.Job(build_id=1, state=models.JobStatus.PASS,
                          allow_failure=False, started_at=datetime.now())
-
-        session.add(job)
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            session.commit()
-
-    def test_job_no_state(self, session):
-        """A job without state should throw Integrity Error."""
-        job = models.Job(build_id=1, product_id=1, allow_failure=False,
-                         started_at=datetime.now())
 
         session.add(job)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -263,7 +256,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_title(self, session):
         """A pull_request with all required fields should be added to DB."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef',
                                           head_repo_id=1, base_repo_id=1,
@@ -277,7 +270,22 @@ class TestPullRequest(object):
 
     def test_pull_request_no_state(self, session):
         """A pull_request without state should throw Integrity Error."""
-        pull_request = models.PullRequest(merged=False, head_sha='abcdef12345',
+        pull_request = models.PullRequest(number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repo_id=1, base_repo_id=1,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now())
+
+        session.add(pull_request)
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            session.commit()
+
+    def test_pull_request_no_number(self, session):
+        """A pull_request without number should throw Integrity Error."""
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+                                          merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
                                           head_branch='foo', base_branch='bar',
@@ -290,7 +298,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_merged(self, session):
         """A pull_request without merged should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -304,7 +312,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_head_sha(self, session):
         """A pull_request without head_sha should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False,
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -318,7 +326,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_base_sha(self, session):
         """A pull_request without base_sha should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           title='abc',
                                           merged=False, head_sha='abcdef12345',
                                           head_repo_id=1, base_repo_id=1,
@@ -332,7 +340,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_head_repo_id(self, session):
         """A pull_request without head_repo_id should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           base_repo_id=1,
@@ -346,7 +354,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_base_repo_id(self, session):
         """A pull_request without base_repo_id should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1,
@@ -360,7 +368,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_head_branch(self, session):
         """A pull_request without head_branch should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -374,7 +382,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_base_branch(self, session):
         """A pull_request without base_repo_id should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -388,7 +396,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_created_at(self, session):
         """A pull_request without created_at should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -401,7 +409,7 @@ class TestPullRequest(object):
 
     def test_pull_request_no_updated_at(self, session):
         """A pull_request without updated_at should throw Integrity Error."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,
@@ -414,7 +422,7 @@ class TestPullRequest(object):
 
     def test_pull_request_complete(self, session):
         """A pull_request with all required fields should be added to DB."""
-        pull_request = models.PullRequest(state=models.PRStatus.OPEN,
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
                                           head_repo_id=1, base_repo_id=1,

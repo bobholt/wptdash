@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
     WPTDash
@@ -7,12 +8,24 @@
     a single GitHub comment and provides an interface for displaying
     more detailed forms of that information.
 """
+import configparser
 from datetime import datetime
-
 from flask import Blueprint, g, render_template, request
 from jsonschema import validate
+import json
+import logging
+import re
+from urllib.parse import parse_qs
 
-GITHUB_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+from wptdash.commenter import update_github_comment
+from wptdash.travis import Travis
+
+CONFIG = configparser.ConfigParser()
+CONFIG.readfp(open(r'config.txt'))
+GH_TOKEN = CONFIG.get('GitHub', 'GH_TOKEN')
+ORG = CONFIG.get('GitHub', 'ORG')
+REPO = CONFIG.get('GitHub', 'REPO')
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 bp = Blueprint('wptdash', __name__)
 
@@ -75,6 +88,7 @@ def add_pull_request():
                 'type': 'object',
                 'properties': {
                     'id': {'type': 'integer'},
+                    'number': {'type': 'integer'},
                     'title': {'type': 'string'},
                     'merged': {'type': 'boolean'},
                     'state': {
@@ -98,8 +112,8 @@ def add_pull_request():
                     ]},
                 },
                 'required': [
-                    'id', 'title', 'merged', 'state', 'head', 'base',
-                    'created_at', 'updated_at'
+                    'id', 'number', 'title', 'merged', 'state', 'head',
+                    'base', 'created_at', 'updated_at'
                 ],
             },
             'sender': {'$ref': '#/definitions/github_user'},
@@ -182,16 +196,17 @@ def add_pull_request():
         db.session, models.PullRequest, id=pr_data['id']
     )
 
+    pr.number = pr_data['number']
     pr.title = pr_data['title']
     pr.state = models.PRStatus.from_string(pr_data['state'])
     pr.creator = creator
     pr.created_at = datetime.strptime(
-        pr_data['created_at'], GITHUB_DATETIME_FORMAT
+        pr_data['created_at'], DATETIME_FORMAT
     )
     pr.merged = pr_data['merged']
     pr.merger = merger
     pr.merged_at = datetime.strptime(
-        pr_data['merged_at'], GITHUB_DATETIME_FORMAT
+        pr_data['merged_at'], DATETIME_FORMAT
     ) if pr_data['merged_at'] else None
     pr.head_commit = head_commit
     pr.base_commit = base_commit
@@ -200,15 +215,173 @@ def add_pull_request():
     pr.head_branch = pr_head['ref']
     pr.base_branch = pr_base['ref']
     pr.updated_at = datetime.strptime(
-        pr_data['updated_at'], GITHUB_DATETIME_FORMAT
+        pr_data['updated_at'], DATETIME_FORMAT
     )
     pr.closed_at = datetime.strptime(
-        pr_data['closed_at'], GITHUB_DATETIME_FORMAT
+        pr_data['closed_at'], DATETIME_FORMAT
     ) if pr_data['closed_at'] else None
 
     db.session.commit()
 
-    return 'OK', 200
+    return update_github_comment(pr.number)
+
+
+@bp.route('/api/build', methods=['POST'])
+def add_build():
+    db = g.db
+    models = g.models
+    schema = {
+        '$schema': 'http://json-schema.org/schema#',
+        'title': 'Travis Build Event',
+        'type': 'object',
+        'definitions': {
+            'date_time': {
+                'type': 'string',
+                'format': 'date-time',
+            },
+        },
+        'properties': {
+            'id': {'type': 'integer'},
+            'number': {'type': 'string'},
+            'head_commit': {'type': 'string'},
+            'base_commit': {'type': 'string'},
+            'pull_request': {'type': 'boolean'},
+            'pull_request_number': {'oneOf': [
+                {'type': 'integer'},
+                {'type': 'null'},
+            ]},
+            'status_message': {
+                'enum': ['Pending', 'Passed', 'Fixed', 'Broken', 'Failed',
+                         'Still Failing', 'Canceled', 'Errored'],
+            },
+            'started_at': {'$ref': '#/definitions/date_time'},
+            'finished_at': {'$ref': '#/definitions/date_time'},
+            'repository': {
+                'type': 'object',
+                'properties': {
+                    'name': {'type': 'string'},
+                    'owner_name': {'type': 'string'},
+                },
+                'required': ['name', 'owner_name'],
+            },
+            'matrix': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'id': {'type': 'integer'},
+                        'number': {'type': 'string'},
+                        'state': {'type': 'string'},
+                        'started_at': {'$ref': '#/definitions/date_time'},
+                        'finished_at': {'oneOf': [
+                            {'$ref': '#/definitions/date_time'},
+                            {'type': 'null'},
+                        ]},
+                        'allow_failure': {'type': 'boolean'},
+                        'config': {'type': 'object'},
+                    },
+                    'required': ['id', 'number', 'state', 'started_at',
+                                 'config', 'allow_failure']
+                }
+            }
+        },
+        'required': ['id', 'number', 'head_commit', 'base_commit',
+                     'pull_request', 'pull_request_number', 'status',
+                     'started_at', 'finished_at', 'repository'],
+    }
+
+    travis = Travis()
+
+    # The payload comes in the request, but we need to make sure it is
+    # really signed by Travis CI. If not, respond to this request with
+    # an error.
+    resp = validate(json.loads(request.form['payload']), schema)
+
+    verified_payload = travis.get_verified_payload(
+        request.form['payload'], request.headers['SIGNATURE']
+    )
+    error = verified_payload.get('error')
+    if error:
+        return error.get('message'), error.get('code')
+
+
+    # Ensure only builds for this repository can post here.
+    repository = verified_payload.get("repository")
+    owner_name = repository.get("owner_name")
+    repo_name = repository.get("name")
+    if owner_name != ORG or repo_name != REPO:
+        return "Forbidden: Repository Mismatch. Build for %s/%s attempting to comment on %s/%s" % (owner_name, repo_name, ORG, REPO), 403
+
+    pr = models.get(
+        db.session, models.PullRequest,
+        number=verified_payload['pull_request_number'],
+        head_sha=verified_payload['head_commit'],
+        base_sha=verified_payload['base_commit']
+    )
+
+    if not pr:
+        return 'Not Found', 404
+
+    head_commit, _ = models.get_or_create(
+        db.session, models.Commit,
+        sha=verified_payload['head_commit']
+    )
+
+    base_commit, _ = models.get_or_create(
+        db.session, models.Commit,
+        sha=verified_payload['base_commit']
+    )
+
+    build, _ = models.get_or_create(
+        db.session, models.Build, id=verified_payload['id']
+    )
+    build.number = int(verified_payload['number'])
+    build.pull_request = pr
+    build.head_commit = head_commit
+    build.base_commit = base_commit
+    build.status = models.BuildStatus.from_string(
+        verified_payload['status_message']
+    )
+    build.started_at = datetime.strptime(
+        verified_payload['started_at'], DATETIME_FORMAT
+    )
+    build.finished_at = datetime.strptime(
+        verified_payload['finished_at'], DATETIME_FORMAT
+    )
+    build.jobs = build.jobs or []
+
+    for job_data in verified_payload['matrix']:
+        product_env = next(
+            (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
+            None
+        )
+        product_name = re.search(
+            r'PRODUCT=([\w:]+)', product_env
+        ).group(1) if product_env else None
+
+        if not product_name:
+            continue
+        product, _ = models.get_or_create(
+            db.session, models.Product, name=product_name
+        )
+        job, _ = models.get_or_create(
+            db.session, models.Job, id=job_data['id']
+        )
+        job.number = float(job_data['number'])
+        job.build = build
+        job.product = product
+        job.allow_failure = job_data['allow_failure']
+        job.started_at = datetime.strptime(
+            job_data['started_at'], DATETIME_FORMAT
+        )
+        job.finished_at = datetime.strptime(
+            job_data['finished_at'], DATETIME_FORMAT
+        )
+        build.jobs.append(job)
+
+    db.session.commit()
+
+    return update_github_comment(pr.number)
 
 
 # @bp.route('/api/stability', methods=['POST'])
