@@ -19,6 +19,9 @@ confs:
 #nonsensitive data
 db_name: wptdash
 db_user: wptdash
+github_org: bobholt
+github_repo: web-platform-tests
 
 #sensitive data
 db_password: "{{ vault_db_password }}"
+github_token: "{{ vault_github_token }}"

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 github_webhook_payload = {
     "action": "opened",
     "number": 1,
@@ -412,4 +414,178 @@ github_webhook_payload = {
     "installation": {
         "id": 234
     }
+}
+
+travis_webhook_payload = {
+    "id": 241202099,
+    "repository": {
+        "id": 1771959,
+        "name": "docs-travis-ci-com",
+        "owner_name": "travis-ci",
+        "url": "http://docs.travis-ci.com"
+    },
+    "number": "2064",
+    "config": {
+        "sudo": False,
+        "dist": "trusty",
+        "language": "python",
+        "python": [
+            "3.5.2"
+        ],
+        "branches": {
+            "only": [
+                "master"
+            ]
+        },
+        "cache": {
+            "pip": True,
+            "directories": [
+                "vendor/bundle",
+                "node_modules"
+            ]
+        },
+        "deploy": {
+            "provider": "heroku",
+            "api_key": {
+                "secure": "hylw2GIHMvZKOKX3uPSaLEzVrUGEA9mzGEA0s4zK37W9HJCTnvAcmgRCwOkRuC4L7R4Zshdh/CGORNnBBgh1xx5JGYwkdnqtjHuUQmWEXCusrIURu/iEBNSsZZEPK7zBuwqMHj2yRm64JfbTDJsku3xdoA5Z8XJG5AMJGKLFgUQ="
+            },
+            "app": "docs-travis-ci-com",
+            "skip_cleanup": True,
+            "true": {
+                "branch": [
+                    "master"
+                ]
+            }
+        },
+        "notifications": {
+            "slack": {
+                "rooms": {
+                    "secure": "LPNgf0Ra6Vu6I7XuK7tcnyFWJg+becx1RfAR35feWK81sru8TyuldQIt7uAKMA8tqFTP8j1Af7iz7UDokbCCfDNCX1GxdAWgXs+UKpwhO89nsidHAsCkW2lWSEM0E3xtOJDyNFoauiHxBKGKUsApJTnf39H+EW9tWrqN5W2sZg8="
+                },
+                "on_success": "never"
+            },
+            "webhooks": "https://docs.travis-ci.com/update_webhook_payload_doc"
+        },
+        "install": [
+            "bundle install --deployment"
+        ],
+        "before_script": [
+            "rvm use 2.3.1 --install"
+        ],
+        "script": [
+            "bundle exec rake test"
+        ],
+        ".result": "configured",
+        "global_env": [
+            "PATH=$HOME/.local/user/bin:$PATH"
+        ],
+        "group": "stable"
+    },
+    "status": 0,
+    "result": 0,
+    "status_message": "Passed",
+    "result_message": "Passed",
+    "started_at": "2017-06-09T13:55:30Z",
+    "finished_at": "2017-06-09T13:58:22Z",
+    "duration": 172,
+    "build_url": "https://travis-ci.org/travis-ci/docs-travis-ci-com/builds/241202099",
+    "commit_id": 69950712,
+    "commit": "a0d04715c110aac1c668390d24f5075969d6831a",
+    "base_commit": "5f42a82d378f993a1b6401a0d9c6c88c9c227556",
+    "head_commit": "8d23f9f7c17d28a1454bc4eb5fd40c94eaef4523",
+    "branch": "master",
+    "message": "RENAME: docker-engine -> docker-ce. package docker-engine is deprecated",
+    "compare_url": "https://github.com/travis-ci/docs-travis-ci-com/pull/1248",
+    "committed_at": "2017-06-09T13:53:35Z",
+    "author_name": "Malcolm Jones",
+    "author_email": "malcolm@adobe.com",
+    "committer_name": "Malcolm Jones",
+    "committer_email": "malcolm@adobe.com",
+    "matrix": [
+        {
+            "id": 241202100,
+            "repository_id": 1771959,
+            "parent_id": 241202099,
+            "number": "2064.1",
+            "state": "finished",
+            "config": {
+                "sudo": False,
+                "dist": "trusty",
+                "language": "python",
+                "python": "3.5.2",
+                "branches": {
+                    "only": [
+                        "master"
+                    ]
+                },
+                "cache": {
+                    "pip": True,
+                    "directories": [
+                        "vendor/bundle",
+                        "node_modules"
+                    ]
+                },
+                "notifications": {
+                    "slack": {
+                        "rooms": {
+                            "secure": "LPNgf0Ra6Vu6I7XuK7tcnyFWJg+becx1RfAR35feWK81sru8TyuldQIt7uAKMA8tqFTP8j1Af7iz7UDokbCCfDNCX1GxdAWgXs+UKpwhO89nsidHAsCkW2lWSEM0E3xtOJDyNFoauiHxBKGKUsApJTnf39H+EW9tWrqN5W2sZg8="
+                        },
+                        "on_success": "never"
+                    },
+                    "webhooks": "https://docs.travis-ci.com/update_webhook_payload_doc"
+                },
+                "install": [
+                    "bundle install --deployment"
+                ],
+                "before_script": [
+                    "rvm use 2.3.1 --install"
+                ],
+                "script": [
+                    "bundle exec rake test"
+                ],
+                "env": ["PRODUCT=chrome:unstable"],
+                ".result": "configured",
+                "global_env": [
+                    "PATH=$HOME/.local/user/bin:$PATH"
+                ],
+                "group": "stable",
+                "os": "linux",
+                "addons": {
+                    "deploy": {
+                        "provider": "heroku",
+                        "api_key": {
+                            "secure": "hylw2GIHMvZKOKX3uPSaLEzVrUGEA9mzGEA0s4zK37W9HJCTnvAcmgRCwOkRuC4L7R4Zshdh/CGORNnBBgh1xx5JGYwkdnqtjHuUQmWEXCusrIURu/iEBNSsZZEPK7zBuwqMHj2yRm64JfbTDJsku3xdoA5Z8XJG5AMJGKLFgUQ="
+                        },
+                        "app": "docs-travis-ci-com",
+                        "skip_cleanup": True,
+                        "true": {
+                            "branch": [
+                                "master"
+                            ]
+                        }
+                    }
+                }
+            },
+            "status": 0,
+            "result": 0,
+            "commit": "a0d04715c110aac1c668390d24f5075969d6831a",
+            "branch": "master",
+            "message": "RENAME: docker-engine -> docker-ce. package docker-engine is deprecated",
+            "compare_url": "https://github.com/travis-ci/docs-travis-ci-com/pull/1248",
+            "started_at": "2017-06-09T13:55:30Z",
+            "finished_at": "2017-06-09T13:58:22Z",
+            "committed_at": "2017-06-09T13:53:35Z",
+            "author_name": "Malcolm Jones",
+            "author_email": "malcolm@adobe.com",
+            "committer_name": "Malcolm Jones",
+            "committer_email": "malcolm@adobe.com",
+            "allow_failure": False
+        }
+    ],
+    "type": "pull_request",
+    "state": "passed",
+    "pull_request": True,
+    "pull_request_number": 1248,
+    "pull_request_title": "RENAME: docker-engine -> docker-ce. package docker-engine is deprecated",
+    "tag": None
 }
