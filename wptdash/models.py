@@ -362,8 +362,10 @@ class Test(db.Model):
                                                   remote_side=[id]))
     jobs = db.relationship('JobResult', back_populates='test')
 
+
 def get(session, model, **kwargs):
     return session.query(model).filter_by(**kwargs).first()
+
 
 def get_or_create(session, model, defaults=None, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()

@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import pytest
 from urllib.parse import urlencode
+from pytest_mock import mocker
 
 from jsonschema.exceptions import ValidationError
 import wptdash.models as models
@@ -273,47 +274,49 @@ class TestAddBuild(object):
     #     """Payload with job missing product adds build but no jobs to DB."""
     #     pass
 
-    # TODO: Hold until we can mock the payload authorization
-    # def test_complete_payload(self, client, session):
-    #     """Complete webhook payload creates build object in db."""
-    #     pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
-    #                                       merged=False,
-    #                                       head_sha='8d23f9f7c17d28a1454bc4eb5fd40c94eaef4523',
-    #                                       base_sha='5f42a82d378f993a1b6401a0d9c6c88c9c227556',
-    #                                       title='abc',
-    #                                       head_repo_id=1, base_repo_id=1,
-    #                                       head_branch='foo', base_branch='bar',
-    #                                       created_at=datetime.now(),
-    #                                       updated_at=datetime.now())
-    #     session.add(pull_request)
-    #     session.commit()
+    def test_complete_payload(self, client, session, mocker):
+        """Complete webhook payload creates build object in db."""
+        mocker.patch('wptdash.travis.Travis.get_verified_payload',
+                     return_value=travis_webhook_payload)
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False,
+                                          head_sha='8d23f9f7c17d28a1454bc4eb5fd40c94eaef4523',
+                                          base_sha='5f42a82d378f993a1b6401a0d9c6c88c9c227556',
+                                          title='abc',
+                                          head_repo_id=1, base_repo_id=1,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now())
+        session.add(pull_request)
+        session.commit()
 
-    #     rv = client.post('/api/build',
-    #                      data=dict(payload=json.dumps(travis_webhook_payload)))
-    #     build = session.query(models.Build).filter(
-    #         models.Build.id == travis_webhook_payload['id']
-    #     ).one_or_none()
+        rv = client.post('/api/build',
+                         data=dict(payload=json.dumps(travis_webhook_payload)),
+                         headers={'SIGNATURE': 'abc'})
+        build = session.query(models.Build).filter(
+            models.Build.id == travis_webhook_payload['id']
+        ).one_or_none()
 
-    #     assert build
-    #     assert build.number == travis_webhook_payload['number']
-    #     assert build.pull_request.number == 1248
-    #     assert build.pull_request.head_sha == travis_webhook_payload['head_commit']
-    #     assert build.pull_request.base_sha == travis_webhook_payload['base_commit']
-    #     assert build.head_commit.sha == travis_webhook_payload['head_commit']
-    #     assert build.base_commit.sha == travis_webhook_payload['base_commit']
-    #     assert build.status == models.BuildStatus.PASSED
-    #     assert build.started_at == datetime.strptime('2017-06-09T13:55:30Z"',
-    #                                                  '%Y-%m-%dT%H:%M:%SZ')
-    #     assert build.finished_at == datetime.strptime('2017-06-09T13:58:22Z"',
-    #                                                   '%Y-%m-%dT%H:%M:%SZ')
-    #     assert len(build.jobs) == 1
+        assert build
+        assert build.number == travis_webhook_payload['number']
+        assert build.pull_request.number == 1248
+        assert build.pull_request.head_sha == travis_webhook_payload['head_commit']
+        assert build.pull_request.base_sha == travis_webhook_payload['base_commit']
+        assert build.head_commit.sha == travis_webhook_payload['head_commit']
+        assert build.base_commit.sha == travis_webhook_payload['base_commit']
+        assert build.status == models.BuildStatus.PASSED
+        assert build.started_at == datetime.strptime('2017-06-09T13:55:30Z"',
+                                                     '%Y-%m-%dT%H:%M:%SZ')
+        assert build.finished_at == datetime.strptime('2017-06-09T13:58:22Z"',
+                                                      '%Y-%m-%dT%H:%M:%SZ')
+        assert len(build.jobs) == 1
 
-    #     job = build.jobs[0]
+        job = build.jobs[0]
 
-    #     assert job.number == 2064.1
-    #     assert job.product.name == 'chrome:unstable'
-    #     assert not job.allow_failure
-    #     assert job.started_at == datetime.strptime('2017-06-09T13:55:30Z"',
-    #                                                '%Y-%m-%dT%H:%M:%SZ')
-    #     assert job.finished_at == datetime.strptime('2017-06-09T13:58:22Z"',
-    #                                                 '%Y-%m-%dT%H:%M:%SZ')
+        assert job.number == 2064.1
+        assert job.product.name == 'chrome:unstable'
+        assert not job.allow_failure
+        assert job.started_at == datetime.strptime('2017-06-09T13:55:30Z"',
+                                                   '%Y-%m-%dT%H:%M:%SZ')
+        assert job.finished_at == datetime.strptime('2017-06-09T13:58:22Z"',
+                                                    '%Y-%m-%dT%H:%M:%SZ')
