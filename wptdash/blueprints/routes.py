@@ -32,6 +32,12 @@ bp = Blueprint('wptdash', __name__)
 
 @bp.route('/')
 def main():
+    db = g.db
+    models = g.models
+    pulls = db.session.query(models.PullRequest).order_by(
+        models.PullRequest.created_at.desc()
+    ).all()
+    return render_template('index.html', pulls=pulls)
     return 'wpt dashboard'
 
 

@@ -1,32 +1,67 @@
 <!doctype html>
-<meta charset=utf8>
+<html lang="en">
+  <head>
+    <meta charset=utf8>
+    <title>Pull Request {{pull_number}} details</title>
+  </head>
+  <body>
+    <h1>Pull Request {{pull_number}}{% if pull %}: {{pull.title}}{% endif %}</h1>
 
-<title>Pull Request {{pull_number}} details</title>
+    {% if not pull %}
+      <p>
+        No information to display for Pull Request {{pull_number}}. Try checking
+        <a href="https://github.com/w3c/web-platform-tests/pull/{{pull_number}}">
+          GitHub
+        </a>
+      </p>
+    {% else %}
+      <p>
+        {{ pull.creator.login}} wants to merge from
+        {{pull.head_repository.owner.login}}/{{pull.head_repository.name}}
+        to
+        {{pull.base_repository.owner.login}}/{{pull.base_repository.name}}.
+      </p>
+      <dl>
+        <dt>Status</dt>
+        <dd>{{ pull.state.name }}</dd>
+        <dt>Merged</dt>
+        <dd>{{ 'Yes' if pull.merged else 'No' }}</dd>
+        {% if pull.merged %}
+          <dt>Merged By</dt>
+          <dd>{{ pull.merger.login }}</dd>
+          <dt>Merged At</dt>
+          <dd>{{ pull.merged_at }}</dd>
+        {% endif %}
+        {% if pull.mirror_url %}
+          <dt>Mirrored at</dt>
+          <dd>{{ pull.mirror_url }}</dd>
+        {% endif %}
+        <dt>Opened</dt>
+        <dd>{{ pull.created_at }}</dd>
+        {% if pull.closed_at %}
+          <dt>Closed</dt>
+          <dd>{{ pull.closed_at }}</dd>
+        {% endif %}
+        <dt>Last Updated</dt>
+        <dd>{{ pull.updated_at }}</dd>
+      </dl>
 
-<h1>Pull Request {{pull_number}}</h1>
-
-{% if not pull %}
-  <p>
-    No information to display for Pull Request {{pull_number}}. Try checking
-    <a href="https://github.com/w3c/web-platform-tests/pull/{{pull_number}}">
-      GitHub
-    </a>
-  </p>
-{% else %}
-
-  {% if not pull.builds %}
-    <p>No builds yet for this pull request.</p>
-  {% else %}
-    <table>
-      <tr>
-        <th>Build Number</th>
-        <th>Status</th>
-      </tr>
-    {% for build in pull.builds %}
-      <tr>
-        <td>{{ build.number }}</td>
-        <td>{{ build.status.name }}</td>
-      </tr>
-    {% endfor %}
-  {% endif %}
-{% endif %}
+      {% if not pull.builds %}
+        <p>No builds yet for this pull request.</p>
+      {% else %}
+        <table>
+          <tr>
+            <th>Build Number</th>
+            <th>Status</th>
+          </tr>
+          {% for build in pull.builds %}
+            <tr>
+              <td>{{ build.number }}</td>
+              <td>{{ build.status.name }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    {% endif %}
+  </body>
+</html>

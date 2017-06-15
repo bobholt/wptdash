@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset=utf8>
+    <title>Web Platform Tests PR Status</title>
+  </head>
+  <body>
+    <h1>Web Platform Tests PR Status</h1>
+
+    {% if not pulls|length %}
+      <p>No pull requests in database.</p>
+    {% else %}
+      <table>
+        <tr>
+          <th>Pull Request</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Last Updated</th>
+        </tr>
+        {% for pull in pulls %}
+          <tr>
+            <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.number }}</a></td>
+            <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.title }}</a></td>
+            <td>{{ pull.state.name }}</td>
+            <td>{{ pull.updated_at }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+  </body>
+</html>
