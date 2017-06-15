@@ -1,31 +1,47 @@
+{% set pr_status_classes = {
+    'OPEN': 'active',
+    'CLOSED': '',
+} %}
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset=utf8>
+    <meta charset="utf8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Web Platform Tests PR Status</title>
+    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
   </head>
-  <body>
-    <h1>Web Platform Tests PR Status</h1>
+  <body class="container">
+    <div class="page-header">
+      <h1>Web Platform Tests PR Status</h1>
+    </div>
 
     {% if not pulls|length %}
       <p>No pull requests in database.</p>
     {% else %}
-      <table>
-        <tr>
-          <th>Pull Request</th>
-          <th>Title</th>
-          <th>Status</th>
-          <th>Last Updated</th>
-        </tr>
-        {% for pull in pulls %}
+      <table class="table">
+        <thead>
           <tr>
-            <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.number }}</a></td>
-            <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.title }}</a></td>
-            <td>{{ pull.state.name }}</td>
-            <td>{{ pull.updated_at }}</td>
+            <th>Pull Request</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Last Updated</th>
           </tr>
-        {% endfor %}
+        </thead>
+        <tbody>
+
+          {% for pull in pulls %}
+            <tr class="{{pr_status_classes[pull.state.name]}}">
+              <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.number }}</a></td>
+              <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.title }}</a></td>
+              <td>{{ pull.state.name }}</td>
+              <td>{{ pull.updated_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
       </table>
     {% endif %}
+    <script src="{{ url_for('static', filename='js/jquery-3.2.1.min.css') }}"></script>
+    <script src="js/bootstrap.min.js"></script>
   </body>
 </html>
