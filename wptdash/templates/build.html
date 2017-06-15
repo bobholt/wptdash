@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset=utf8>
+    <title>Build {{build_number}} details</title>
+  </head>
+  <body>
+    <h1>
+      Build {{build_number}}
+      {% if build %}
+        for pull request
+        <a href="{{ url_for('wptdash.pull_detail', pull_number=build.pull_request.number) }}">{{ build.pull_request.number }}</a>
+      {% endif %}
+    </h1>
+
+    {% if not build %}
+      <p>
+        No information to display for Build {{build_number}}.
+      </p>
+      <p>
+        <a href="{{ url_for('wptdash.main') }}">Home</a>
+      </p>
+    {% else %}
+      <dl>
+        <dt>Status</dt>
+        <dd>{{ build.status.name }}</dd>
+        <dt>Started</dt>
+        <dd>{{ build.started_at }}</dd>
+        {% if build.finished_at %}
+          <dt>Finished</dt>
+          <dd>{{ build.finished_at }}</dd>
+        {% endif %}
+      </dl>
+
+      <h2>Jobs</h2>
+      {% if not build.jobs %}
+        <p>No jobs for this build.</p>
+      {% else %}
+        <table>
+          <tr>
+            <th>Job Number</th>
+            <th>Product</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Ended</th>
+            <th>Allowed Failure</th>
+          </tr>
+          {% for job in build.jobs|sort(attribute='number') %}
+            <tr>
+              <td>{{ job.number }}</td>
+              <td>{{ job.product.name }}</td>
+              <td>{{ job.state.name }}</td>
+              <td>{{ job.started_at }}</td>
+              <td>{{ job.finished_at }}</td>
+              <td>{{ 'Yes' if job.allow_failure else 'No' }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    {% endif %}
+  </body>
+</html>

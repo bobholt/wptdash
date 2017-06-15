@@ -46,6 +46,7 @@
         <dd>{{ pull.updated_at }}</dd>
       </dl>
 
+      <h2>Builds</h2>
       {% if not pull.builds %}
         <p>No builds yet for this pull request.</p>
       {% else %}
@@ -53,11 +54,15 @@
           <tr>
             <th>Build Number</th>
             <th>Status</th>
+            <th>Started</th>
+            <th>Ended</th>
           </tr>
           {% for build in pull.builds %}
             <tr>
-              <td>{{ build.number }}</td>
+              <td><a href="{{ url_for('wptdash.build_detail', build_number=build.number) }}">{{ build.number }}</a></td>
               <td>{{ build.status.name }}</td>
+              <td>{{ build.started_at }}</td>
+              <td>{{ build.finished_at }}</td>
             </tr>
           {% endfor %}
         </table>

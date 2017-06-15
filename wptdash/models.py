@@ -42,10 +42,13 @@ class JobStatus(enum.Enum):
     Subclasses `enum.Enum`
     """
 
-    PASS = 1
-    FAIL = 2
-    ERROR = 3
-    TIMEOUT = 4
+    CREATED = 1
+    QUEUED = 2
+    STARTED = 3
+    PASSED = 4
+    FAILED = 5
+    ERRORED = 6
+    FINISHED = 7
 
     @classmethod
     def from_string(cls, status):

@@ -38,7 +38,6 @@ def main():
         models.PullRequest.created_at.desc()
     ).all()
     return render_template('index.html', pulls=pulls)
-    return 'wpt dashboard'
 
 
 @bp.route('/pull/<int:pull_number>')
@@ -47,6 +46,14 @@ def pull_detail(pull_number):
     models = g.models
     pull = models.get(db.session, models.PullRequest, number=pull_number)
     return render_template('pull.html', pull=pull, pull_number=pull_number)
+
+
+@bp.route('/build/<int:build_number>')
+def build_detail(build_number):
+    db = g.db
+    models = g.models
+    build = models.get(db.session, models.Build, number=build_number)
+    return render_template('build.html', build=build, build_number=build_number)
 
 
 @bp.route('/api/pull', methods=['POST'])
@@ -376,6 +383,7 @@ def add_build():
         job.number = float(job_data['number'])
         job.build = build
         job.product = product
+        job.state = models.JobStatus.from_string(job_data['state'])
         job.allow_failure = job_data['allow_failure']
         job.started_at = datetime.strptime(
             job_data['started_at'], DATETIME_FORMAT
