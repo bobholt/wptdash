@@ -45,11 +45,11 @@
             <th>Ended</th>
             <th>Allowed Failure</th>
           </tr>
-          {% for job in build.jobs|sort(attribute='number') %}
+          {% for job in build.jobs|sort(attribute='id') %}
             <tr>
               <td>{{ job.number }}</td>
-              <td>{{ job.product.name }}</td>
-              <td>{{ job.state.name }}</td>
+              <td>{{ job.product.name|replace(':', ' ')|title }}</td>
+              <td>{{ job.state.name|capitalize }}</td>
               <td>{{ job.started_at }}</td>
               <td>{{ job.finished_at }}</td>
               <td>{{ 'Yes' if job.allow_failure else 'No' }}</td>

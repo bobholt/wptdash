@@ -234,9 +234,11 @@ def add_pull_request():
         pr_data['closed_at'], DATETIME_FORMAT
     ) if pr_data['closed_at'] else None
 
+    resp = update_github_comment(pr)
+
     db.session.commit()
 
-    return update_github_comment(pr.number)
+    return resp
 
 
 @bp.route('/api/build', methods=['POST'])
@@ -372,8 +374,11 @@ def add_build():
             r'PRODUCT=([\w:]+)', product_env
         ).group(1) if product_env else None
 
+
         if not product_name:
             continue
+
+        product_name = re.sub(r'^sauce:', '', product_name)
         product, _ = models.get_or_create(
             db.session, models.Product, name=product_name
         )
@@ -393,9 +398,11 @@ def add_build():
         )
         build.jobs.append(job)
 
+    resp = update_github_comment(build.pr)
+
     db.session.commit()
 
-    return update_github_comment(pr.number)
+    return resp
 
 
 # @bp.route('/api/stability', methods=['POST'])
