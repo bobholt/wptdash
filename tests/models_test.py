@@ -43,7 +43,7 @@ class TestBuild(object):
         session.add(build)
         session.commit()
 
-        builds = models.Build.query.all()
+        builds = session.query(models.Build).all()
         assert build in builds
 
 
@@ -74,7 +74,7 @@ class TestCommit(object):
         session.add(commit)
         session.commit()
 
-        commits = models.Commit.query.all()
+        commits = session.query(models.Commit).all()
         assert commit in commits
 
 
@@ -97,7 +97,7 @@ class TestGitHubUser(object):
         session.add(github_user)
         session.commit()
 
-        github_users = models.GitHubUser.query.all()
+        github_users = session.query(models.GitHubUser).all()
         assert github_user in github_users
 
 
@@ -107,7 +107,7 @@ class TestJob(object):
 
     def test_job_no_build_id(self, session):
         """A job without build_id should throw Integrity Error."""
-        job = models.Job(product_id=1, state=models.JobStatus.PASS,
+        job = models.Job(product_id=1, state=models.JobStatus.PASSED,
                          allow_failure=False, started_at=datetime.now())
 
         session.add(job)
@@ -116,7 +116,7 @@ class TestJob(object):
 
     def test_job_no_product_id(self, session):
         """A job without product_id should throw Integrity Error."""
-        job = models.Job(build_id=1, state=models.JobStatus.PASS,
+        job = models.Job(build_id=1, state=models.JobStatus.PASSED,
                          allow_failure=False, started_at=datetime.now())
 
         session.add(job)
@@ -125,7 +125,7 @@ class TestJob(object):
 
     def test_job_no_allow_failure(self, session):
         """A job withoutn allow_failure should throw Integrity Error."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASS,
+        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
                          started_at=datetime.now())
 
         session.add(job)
@@ -134,7 +134,7 @@ class TestJob(object):
 
     def test_job_no_started_at(self, session):
         """A job withoutn started_at should throw Integrity Error."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASS,
+        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
                          allow_failure=False)
 
         session.add(job)
@@ -143,13 +143,13 @@ class TestJob(object):
 
     def test_job_complete(self, session):
         """A job with all required fields should be added to DB."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASS,
+        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
                          allow_failure=False, started_at=datetime.now())
 
         session.add(job)
         session.commit()
 
-        jobs = models.Job.query.all()
+        jobs = session.query(models.Job).all()
         assert job in jobs
 
 
@@ -246,7 +246,7 @@ class TestProduct(object):
         session.add(product)
         session.commit()
 
-        products = models.Product.query.all()
+        products = session.query(models.Product).all()
         assert product in products
 
 
@@ -433,7 +433,7 @@ class TestPullRequest(object):
         session.add(pull_request)
         session.commit()
 
-        pull_requests = models.PullRequest.query.all()
+        pull_requests = session.query(models.PullRequest).all()
         assert pull_request in pull_requests
 
 
@@ -464,7 +464,7 @@ class TestRepository(object):
         session.add(repository)
         session.commit()
 
-        repositories = models.Repository.query.all()
+        repositories = session.query(models.Repository).all()
         assert repository in repositories
 
 
@@ -521,7 +521,7 @@ class TestStabilityStatus(object):
         session.add(stability_status)
         session.commit()
 
-        statuses = models.StabilityStatus.query.all()
+        statuses = session.query(models.StabilityStatus).all()
         assert stability_status in statuses
 
 
@@ -544,8 +544,21 @@ class TestTest(object):
         session.add(test)
         session.commit()
 
-        tests = models.Test.query.all()
+        tests = session.query(models.Test).all()
         assert test in tests
+
+
+class TestTestMirror(object):
+
+    """Test the TestMirror model class."""
+
+    def test_test_mirror_no_pull_id(self, session):
+        """A test without pull_id should throw Integrity Error."""
+        test = models.TestMirror(url=None)
+
+        session.add(test)
+        with pytest.raises(sqlalchemy.orm.exc.FlushError):
+            session.commit()
 
 
 class TestGetOrCreate(object):

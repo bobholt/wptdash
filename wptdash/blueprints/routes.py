@@ -233,12 +233,10 @@ def add_pull_request():
     pr.closed_at = datetime.strptime(
         pr_data['closed_at'], DATETIME_FORMAT
     ) if pr_data['closed_at'] else None
-
-    resp = update_github_comment(pr)
+    pr.mirror = models.TestMirror(url=None)
 
     db.session.commit()
-
-    return resp
+    return update_github_comment(pr)
 
 
 @bp.route('/api/build', methods=['POST'])
@@ -398,12 +396,53 @@ def add_build():
         )
         build.jobs.append(job)
 
-    resp = update_github_comment(build.pr)
+    db.session.commit()
+    return update_github_comment(pr)
+
+
+@bp.route('/api/test-mirror', methods=['POST', 'DELETE'])
+def update_test_mirror():
+    db = g.db
+    models = g.models
+    schema = None
+
+    if request.method == 'DELETE':
+        schema = {
+            '$schema': 'http://json-schema.org/schema#',
+            'title': 'PR Mirrored Event',
+            'type': 'object',
+            'properties': {
+                'issue_number': {'type': 'integer'},
+            },
+            'required': ['issue_number', 'url'],
+        }
+    else:
+        schema = {
+            '$schema': 'http://json-schema.org/schema#',
+            'title': 'PR Mirrored Event',
+            'type': 'object',
+            'properties': {
+                'issue_number': {'type': 'integer'},
+                'url': {'type': 'string'}
+            },
+            'required': ['issue_number', 'url'],
+        }
+
+    data = request.get_json(force=True)
+    validate(data, schema)
+
+    pr = models.get(
+        db.session, models.PullRequest, number=data['issue_number']
+    )
+
+    if not pr:
+        return 'Not Found', 404
+
+    pr.mirror = pr.mirror or models.TestMirror()
+    pr.mirror.url = data['url'] if request.method == 'POST' else None
 
     db.session.commit()
-
-    return resp
-
+    return update_github_comment(pr)
 
 # @bp.route('/api/stability', methods=['POST'])
 # def add_stability_check():

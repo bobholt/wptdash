@@ -271,7 +271,6 @@ class PullRequest(db.Model):
     number = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String, nullable=False)
     state = db.Column(db.Enum(PRStatus), nullable=False)
-    mirror_url = db.Column(db.String)
     head_sha = db.Column(db.String, db.ForeignKey('commit.sha'),
                          nullable=False)
     base_sha = db.Column(db.String, db.ForeignKey('commit.sha'),
@@ -303,6 +302,8 @@ class PullRequest(db.Model):
                                       backref='pull_requests')
     base_repository = db.relationship('Repository',
                                       foreign_keys=[base_repo_id])
+    mirror = db.relationship('TestMirror', back_populates='pull_request',
+                             uselist=False)
     watchers = db.relationship('GitHubUser', secondary=USER_PR,
                                back_populates='prs_watching')
 
@@ -366,6 +367,30 @@ class Test(db.Model):
     jobs = db.relationship('JobResult', back_populates='test')
 
 
+class TestMirror(db.Model):
+
+    """
+    Table containing pull request mirror URLs.
+
+    Separate 1-to-1 relationship table to present a discrete resource
+    for API endpoints.
+
+    Subclasses ``wptdash.app.db.Model``
+    """
+
+    __tablename__ = "test_mirror"
+
+    pull_id = db.Column(db.Integer,
+                        db.ForeignKey('pull_request.id'),
+                        primary_key=True,
+                        autoincrement=False)
+    url = db.Column(db.String, nullable=True)
+
+    pull_request = db.relationship(PullRequest,
+                                   back_populates='mirror',
+                                   uselist=False)
+
+
 def get(session, model, **kwargs):
     return session.query(model).filter_by(**kwargs).first()
 
@@ -380,3 +405,5 @@ def get_or_create(session, model, defaults=None, **kwargs):
         instance = model(**kwargs)
         session.add(instance)
         return instance, True
+
+

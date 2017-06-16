@@ -17,10 +17,25 @@ class TestRoot(object):
 
     """Test the application root route."""
 
-    def test_content(self, client):
-        """Root route returns expected text."""
+    def test_no_pulls(self, client, session):
+        """Root route says "No pull requests" when no pulls in DB."""
+        session.commit()
         rv = client.get('/')
-        assert b'wpt dashboard' in rv.data
+        assert b'No pull requests' in rv.data
+
+    def test_pulls(self, client, session):
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repo_id=1, base_repo_id=1,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now())
+        session.add(pull_request)
+        session.commit()
+
+        rv = client.get('/')
+        assert b'Pull Request' in rv.data
 
 
 class TestPullDetail(object):
@@ -34,13 +49,17 @@ class TestPullDetail(object):
 
     def test_no_builds(self, client, session):
         """PR detail route says "No builds" when pull has no build info."""
+        owner = models.GitHubUser(login='foo')
+        head_repo = models.Repository(name='bar', owner=owner)
+        base_repo = models.Repository(name='baz', owner=owner)
         pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
-                                          head_repo_id=1, base_repo_id=1,
+                                          head_repository=head_repo,
+                                          base_repository=base_repo,
                                           head_branch='foo', base_branch='bar',
                                           created_at=datetime.now(),
-                                          updated_at=datetime.now())
+                                          updated_at=datetime.now(), id=1)
         session.add(pull_request)
         session.commit()
 
@@ -49,13 +68,17 @@ class TestPullDetail(object):
 
     def test_builds(self, client, session):
         """PR detail route displays builds when they exist."""
+        owner = models.GitHubUser(login='foo')
+        head_repo = models.Repository(name='bar', owner=owner)
+        base_repo = models.Repository(name='baz', owner=owner)
         pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
                                           base_sha='12345abcdef', title='abc',
-                                          head_repo_id=1, base_repo_id=1,
+                                          head_repository=head_repo,
+                                          base_repository=base_repo,
                                           head_branch='foo', base_branch='bar',
                                           created_at=datetime.now(),
-                                          updated_at=datetime.now())
+                                          updated_at=datetime.now(), id=1)
         build = models.Build(number=123, status=models.BuildStatus.PENDING,
                              started_at=datetime.now())
 
@@ -68,6 +91,68 @@ class TestPullDetail(object):
         assert b'Build Number' in rv.data
 
 
+class TestBuildDetail(object):
+
+    """Test the build request detail page."""
+
+    def test_no_data(self, client, session):
+        """PR detail route says "No information" when no pull in DB."""
+        rv = client.get('/build/1')
+        assert b'No information' in rv.data
+
+    def test_no_jobs(self, client, session):
+        """Build detail route says "No jobs" when pull has no job info."""
+        owner = models.GitHubUser(login='foo')
+        head_repo = models.Repository(name='bar', owner=owner)
+        base_repo = models.Repository(name='baz', owner=owner)
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repository=head_repo,
+                                          base_repository=base_repo,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now())
+        build = models.Build(number=123, status=models.BuildStatus.PENDING,
+                             started_at=datetime.now(), id=1,
+                             pull_request=pull_request, jobs=[])
+        session.add(build)
+        session.commit()
+
+        rv = client.get('/build/123')
+        assert b'No jobs' in rv.data
+
+    def test_jobs(self, client, session):
+        """Build detail route displays jobs when they exist."""
+        owner = models.GitHubUser(login='foo')
+        head_repo = models.Repository(name='bar', owner=owner)
+        base_repo = models.Repository(name='baz', owner=owner)
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repository=head_repo,
+                                          base_repository=base_repo,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now())
+        build = models.Build(number=123, status=models.BuildStatus.PENDING,
+                             started_at=datetime.now(), id=1,
+                             pull_request=pull_request)
+
+        product = models.Product(name='test:unstable')
+        job = models.Job(number=1.1, build=build, product=product,
+                         state=models.JobStatus.PASSED, allow_failure=True,
+                         started_at=datetime.now(), finished_at=datetime.now())
+
+        build.jobs = [job]
+
+        session.add(build)
+        session.commit()
+
+        rv = client.get('/build/123')
+        assert b'Job Number' in rv.data
+
+
 class TestAddPullRequest(object):
 
     """Test endpoint for adding pull request data from GitHub."""
@@ -78,7 +163,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('id')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_number(self, client, session):
         """Payload missing number throws jsonschema ValidationError."""
@@ -86,7 +171,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('number')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_title(self, client, session):
         """Payload missing title throws jsonschema ValidationError."""
@@ -94,7 +179,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('title')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_creator(self, client, session):
         """Payload missing sender throws jsonschema ValidationError."""
@@ -102,7 +187,7 @@ class TestAddPullRequest(object):
         payload.pop('sender')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_created_at(self, client, session):
         """Payload missing created_at throws jsonschema ValidationError."""
@@ -110,7 +195,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('created_at')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_updated_at(self, client, session):
         """Payload missing updated_at throws jsonschema ValidationError."""
@@ -118,7 +203,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('updated_at')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_merged(self, client, session):
         """Payload missing merged throws jsonschema ValidationError."""
@@ -126,7 +211,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('merged')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_head(self, client, session):
         """Payload missing head throws jsonschema ValidationError."""
@@ -134,7 +219,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('head')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_base(self, client, session):
         """Payload missing base throws jsonschema ValidationError."""
@@ -142,7 +227,7 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('base')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_no_state(self, client, session):
         """Payload missing state throws jsonschema ValidationError."""
@@ -150,12 +235,12 @@ class TestAddPullRequest(object):
         payload['pull_request'].pop('state')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
-                        content_type="application/json")
+                        content_type='application/json')
 
     def test_complete_payload(self, client, session):
         """Complete webhook payload creates pull request object in db."""
         rv = client.post('/api/pull', data=json.dumps(github_webhook_payload),
-                         content_type="application/json")
+                         content_type='application/json')
         pr = session.query(models.PullRequest).filter(
             models.PullRequest.id == github_webhook_payload['pull_request']['id']
         ).one_or_none()
@@ -321,3 +406,45 @@ class TestAddBuild(object):
     #                                                '%Y-%m-%dT%H:%M:%SZ')
     #     assert job.finished_at == datetime.strptime('2017-06-09T13:58:22Z"',
     #                                                 '%Y-%m-%dT%H:%M:%SZ')
+
+
+class TestUpdateTestMirror(object):
+
+    """Test endpoint for adding pr mirror."""
+
+    def test_no_issue_number(self, client, session):
+        """Payload missing issue_number throws jsonschema ValidationError."""
+        payload = {'url': 'abc'}
+        with pytest.raises(ValidationError):
+            client.post('/api/test-mirror', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_url(self, client, session):
+        """Payload missing issue_number throws jsonschema ValidationError."""
+        payload = {'issue_number': 1}
+        with pytest.raises(ValidationError):
+            client.post('/api/test-mirror', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_complete_payload(self, client, session):
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repo_id=1, base_repo_id=1,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now(), id=1)
+        session.add(pull_request)
+        session.commit()
+
+        payload = {'issue_number': 1, 'url': 'abc'}
+        rv = client.post('/api/test-mirror', data=json.dumps(payload),
+                         content_type='application/json')
+
+        mirror = session.query(models.TestMirror).filter(
+            models.TestMirror.pull_id == 1
+        ).one_or_none()
+
+        assert mirror
+        assert mirror.url == 'abc'
+
