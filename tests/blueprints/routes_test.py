@@ -10,7 +10,8 @@ from pytest_mock import mocker
 from jsonschema.exceptions import ValidationError
 import wptdash.models as models
 from tests.blueprints.fixtures.payloads import (github_webhook_payload,
-                                                travis_webhook_payload)
+                                                travis_webhook_payload,
+                                                stability_payload)
 
 
 class TestRoot(object):
@@ -426,6 +427,14 @@ class TestUpdateTestMirror(object):
             client.post('/api/test-mirror', data=json.dumps(payload),
                         content_type='application/json')
 
+    def test_no_pr(self, client, session):
+        """Returns HTTP 422 if no matching PR in database."""
+        payload = {'issue_number': 1, 'url': 'abc'}
+        rv = client.post('/api/test-mirror', data=json.dumps(payload),
+                         content_type='application/json')
+
+        assert rv.status_code == 422
+
     def test_complete_payload(self, client, session):
         pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
                                           merged=False, head_sha='abcdef12345',
@@ -448,3 +457,82 @@ class TestUpdateTestMirror(object):
         assert mirror
         assert mirror.url == 'abc'
 
+
+class TestAddStabilityCheck(object):
+
+    """Test endpoint for adding stability check."""
+
+    def test_no_pull(self, client, session):
+        """Payload missing pull throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('pull')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_job(self, client, session):
+        """Payload missing job throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('job')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_build(self, client, session):
+        """Payload missing build throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('build')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_product(self, client, session):
+        """Payload missing product throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('product')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_iterations(self, client, session):
+        """Payload missing iterations throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('iterations')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_results(self, client, session):
+        """Payload missing results throws jsonschema ValidationError."""
+        payload = deepcopy(stability_payload)
+        payload.pop('results')
+        with pytest.raises(ValidationError):
+            client.post('/api/stability', data=json.dumps(payload),
+                        content_type='application/json')
+
+    def test_no_pr(self, client, session):
+        """Returns HTTP 422 if no matching PR in database."""
+        rv = client.post('/api/stability', data=json.dumps(stability_payload),
+                         content_type='application/json')
+        assert rv.status_code == 422
+
+    def test_complete_payload(self, client, session):
+        pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,
+                                          merged=False, head_sha='abcdef12345',
+                                          base_sha='12345abcdef', title='abc',
+                                          head_repo_id=1, base_repo_id=1,
+                                          head_branch='foo', base_branch='bar',
+                                          created_at=datetime.now(),
+                                          updated_at=datetime.now(), id=1)
+        session.add(pull_request)
+        session.commit()
+
+        rv = client.post('/api/stability', data=json.dumps(stability_payload),
+                         content_type='application/json')
+
+        stability_statuses = session.query(models.StabilityStatus).filter(
+            models.StabilityStatus.job_id == 2,
+            models.StabilityStatus.test_id == 'curb the dog'
+        ).all()
+
+        assert len(stability_statuses) == 2

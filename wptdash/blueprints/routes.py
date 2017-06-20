@@ -284,7 +284,11 @@ def add_build():
                     'properties': {
                         'id': {'type': 'integer'},
                         'number': {'type': 'string'},
-                        'state': {'type': 'string'},
+                        'state': {
+                            'type': 'string',
+                            'enum': ['created', 'queued', 'started', 'passed',
+                                     'failed', 'errored', 'finished']
+                        },
                         'started_at': {'$ref': '#/definitions/date_time'},
                         'finished_at': {'oneOf': [
                             {'$ref': '#/definitions/date_time'},
@@ -372,7 +376,6 @@ def add_build():
             r'PRODUCT=([\w:]+)', product_env
         ).group(1) if product_env else None
 
-
         if not product_name:
             continue
 
@@ -444,96 +447,146 @@ def update_test_mirror():
     db.session.commit()
     return update_github_comment(pr)
 
-# @bp.route('/api/stability', methods=['POST'])
-# def add_stability_check():
-#     db = g.db
-#     models = g.models
-#     schema = {
-#         'type': 'object',
-#         'properties': {
-#             'pull_request': {
-#                 'type': 'integer'
-#             },
-#             'url': {
-#                 'type': 'string'
-#             },
-#             'product': {
-#                 'type': 'string',
-#                 'maxLength': 255,
-#             },
-#             'iterations': {
-#                 'type': 'integer'
-#             },
-#             'status': {
-#                 'type': 'string',
-#                 'enum': ['pass', 'fail', 'error']
-#             },
-#             'message': {
-#                 'type': 'string'
-#             },
-#             'results': {
-#                 'type': 'array',
-#                 'items': {
-#                     'type': 'object',
-#                     'properties': {
-#                         'test': {
-#                             'type': 'string',
-#                         },
-#                         'subtest': {
-#                             'type': ['string', 'null']
-#                         },
-#                         'status': {
-#                             'type': 'object',
-#                             'patternProperties': {
-#                                 '^(?:pass|fail|ok|timeout|error|notrun|crash)$': {
-#                                     'type': 'integer'
-#                                 }
-#                             }
-#                         }
-#                     },
-#                     'required': ['test', 'subtest', 'status']
-#                 }
-#             }
-#         },
-#         'required': ['pull_request', 'product', 'iterations', 'status']
-#     }
+@bp.route('/api/stability', methods=['POST'])
+def add_stability_check():
+    db = g.db
+    models = g.models
+    schema = {
+        'type': 'object',
+        'properties': {
+            'pull': {
+                'type': 'object',
+                'properties': {
+                    'number': {'type': 'integer'},
+                    'sha': {'type': 'string'},
+                },
+                'required': ['number', 'sha'],
+            },
+            'job': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer'},
+                    'number': {'type': 'string'},
+                    'allow_failure': {'type': 'boolean'},
+                    'status': {
+                        'type': 'string',
+                        'enum': ['created', 'queued', 'started', 'passed',
+                                 'failed', 'errored', 'finished']
+                    },
+                },
+                'required': [
+                    'id', 'number', 'allow_failure', 'status',
+                ],
+            },
+            'build': {
+                'type': 'object',
+                'properties': {
+                    'id': {'type': 'integer'},
+                    'number': {'type': 'string'},
+                },
+                'required': [
+                    'id', 'number',
+                ],
+            },
+            'product': {
+                'type': 'string',
+                'maxLength': 255,
+            },
+            'iterations': {
+                'type': 'integer'
+            },
+            'message': {
+                'type': 'string'
+            },
+            'results': {
+                'type': 'array',
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'test': {
+                            'type': 'string',
+                        },
+                        'subtest': {
+                            'type': ['string', 'null']
+                        },
+                        'status': {
+                            'type': 'object',
+                            'patternProperties': {
+                                '^(?:pass|fail|ok|timeout|error|notrun|crash)$': {
+                                    'type': 'integer'
+                                }
+                            }
+                        }
+                    },
+                    'required': ['test', 'subtest', 'status']
+                }
+            }
+        },
+        'required': ['pull', 'job', 'build', 'product', 'iterations',
+                     'results']
+    }
 
-#     data = request.get_json(force=True)
-#     validate(data, schema)
+    data = request.get_json(force=True)
+    validate(data, schema)
 
-#     pr, _ = models.get_or_create(db.session,
-#                                  models.PullRequest,
-#                                  id=data['pull_request'])
+    pr = models.get(
+        db.session, models.PullRequest,
+        number=data['pull']['number'],
+        head_sha=data['pull']['sha'],
+    )
 
-#     product, _ = models.get_or_create(db.session,
-#                                       models.StabilityProduct,
-#                                       name=data['product'])
+    if not pr:
+        return 'Not Found', 404
 
-#     job = models.StabilityJob(
-#         pull=pr,
-#         product=product,
-#         status=models.JobStatus.from_string(data['status'])
-#     )
-#     db.session.add(job)
+    build, _ = models.get_or_create(
+        db.session, models.Build, id=data['build']['id']
+    )
+    build.number = int(data['build']['number'])
+    build.pull_request = pr
+    build.head_sha = data['pull']['sha']
+    build.status = build.status or models.BuildStatus.from_string('pending')
 
-#     for result_data in data.get('results', []):
-#         test, _ = models.get_or_create(db.session,
-#                                        models.Test,
-#                                        test=result_data['test'],
-#                                        subtest=result_data['subtest'])
-#         result = models.StabilityResult(test=test,
-#                                         iterations=data['iterations'])
-#         db.session.add(result)
+    product_name = re.sub(r'^sauce:', '', data['product'])
+    product, _ = models.get_or_create(
+        db.session, models.Product, name=product_name
+    )
 
-#         for status_name, count in result_data['status'].iteritems():
-#             status = models.StabilityStatus(
-#                 result=result,
-#                 status=models.TestStatus.from_string(status_name),
-#                 count=count
-#             )
-#             db.session.add(status)
+    job, _ = models.get_or_create(
+        db.session, models.Job, id=data['job']['id']
+    )
+    job.number = data['job']['number']
+    job.allow_failure = data['job']['allow_failure']
+    job.build = build
+    job.product = product
+    job.message = data.get('message', None)
+    job.state = models.JobStatus.from_string(data['job']['status'])
 
-#     db.session.commit()
+    for result_data in data.get('results', []):
+        test, _ = models.get_or_create(
+            db.session,
+            models.Test,
+            id=result_data['subtest'] or result_data['test']
+        )
+        if result_data['subtest']:
+            test.parent_id = result_data['test']
 
-#     # TODO: make this return some useful JSON
-#     return 'Created job %s' % job.id
+        result, _ = models.get_or_create(
+            db.session,
+            models.JobResult,
+            test_id=test.id,
+            job_id=job.id,
+        )
+        result.iterations = data['iterations']
+
+        for status_name, count in result_data['status'].items():
+            status, _ = models.get_or_create(
+                db.session,
+                models.StabilityStatus,
+                job_id=job.id,
+                test_id=test.id,
+                status=models.TestStatus.from_string(status_name)
+            )
+            status.count = count
+
+    db.session.commit()
+    return update_github_comment(pr)

@@ -589,3 +589,40 @@ travis_webhook_payload = {
     "pull_request_title": "RENAME: docker-engine -> docker-ce. package docker-engine is deprecated",
     "tag": None
 }
+
+stability_payload = {
+    "pull": {
+        "number": 1,
+        "sha": "abcdef12345"
+    },
+    "job": {
+        "id": 2,
+        "number": "123.1",
+        "allow_failure": True,
+        "status": "failed",
+    },
+    "build": {
+        "id": 3,
+        "number": "123"
+    },
+    "product": "chrome:unstable",
+    "iterations": 10,
+    "results": [
+        {
+            "test": "walk the dog",
+            "subtest": None,
+            "status": {
+                "pass": 5,
+                "fail": 5,
+            }
+        },
+        {
+            "test": "walk the dog",
+            "subtest": "curb the dog",
+            "status": {
+                "pass": 5,
+                "fail": 5
+            }
+        }
+    ]
+}

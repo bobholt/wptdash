@@ -145,7 +145,7 @@ class Build(db.Model):
     head_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
     base_sha = db.Column(db.String, db.ForeignKey('commit.sha'))
     status = db.Column(db.Enum(BuildStatus), nullable=False)
-    started_at = db.Column(db.TIMESTAMP(), nullable=False)
+    started_at = db.Column(db.TIMESTAMP())
     finished_at = db.Column(db.TIMESTAMP())
 
     jobs = db.relationship('Job', back_populates='build')
@@ -209,9 +209,9 @@ class Job(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'),
                            nullable=False)
     state = db.Column(db.Enum(JobStatus))
-    error_message = db.Column(db.Text)
+    message = db.Column(db.Text)
     allow_failure = db.Column(db.Boolean, nullable=False)
-    started_at = db.Column(db.TIMESTAMP(), nullable=False)
+    started_at = db.Column(db.TIMESTAMP())
     finished_at = db.Column(db.TIMESTAMP())
 
     build = db.relationship('Build', back_populates='jobs')

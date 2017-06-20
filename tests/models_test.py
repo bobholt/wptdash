@@ -12,8 +12,7 @@ class TestBuild(object):
 
     def test_build_no_number(self, session):
         """A build without build number should throw Integrity Error."""
-        build = models.Build(status=models.BuildStatus.PENDING,
-                             started_at=datetime.now())
+        build = models.Build(status=models.BuildStatus.PENDING)
 
         session.add(build)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -21,15 +20,7 @@ class TestBuild(object):
 
     def test_build_no_status(self, session):
         """A build without status should throw Integrity Error."""
-        build = models.Build(number=123, started_at=datetime.now())
-
-        session.add(build)
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            session.commit()
-
-    def test_build_no_started_at(self, session):
-        """A build without started_at should throw Integrity Error."""
-        build = models.Build(number=123, status=models.BuildStatus.PENDING)
+        build = models.Build(number=123)
 
         session.add(build)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -37,8 +28,7 @@ class TestBuild(object):
 
     def test_build_complete(self, session):
         """A build with all required fields should be added to DB."""
-        build = models.Build(number=123, status=models.BuildStatus.PENDING,
-                             started_at=datetime.now())
+        build = models.Build(number=123, status=models.BuildStatus.PENDING)
 
         session.add(build)
         session.commit()
@@ -108,7 +98,7 @@ class TestJob(object):
     def test_job_no_build_id(self, session):
         """A job without build_id should throw Integrity Error."""
         job = models.Job(product_id=1, state=models.JobStatus.PASSED,
-                         allow_failure=False, started_at=datetime.now())
+                         allow_failure=False)
 
         session.add(job)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -117,7 +107,7 @@ class TestJob(object):
     def test_job_no_product_id(self, session):
         """A job without product_id should throw Integrity Error."""
         job = models.Job(build_id=1, state=models.JobStatus.PASSED,
-                         allow_failure=False, started_at=datetime.now())
+                         allow_failure=False)
 
         session.add(job)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -125,17 +115,8 @@ class TestJob(object):
 
     def test_job_no_allow_failure(self, session):
         """A job withoutn allow_failure should throw Integrity Error."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
-                         started_at=datetime.now())
-
-        session.add(job)
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            session.commit()
-
-    def test_job_no_started_at(self, session):
-        """A job withoutn started_at should throw Integrity Error."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
-                         allow_failure=False)
+        job = models.Job(build_id=1, product_id=1,
+                         state=models.JobStatus.PASSED)
 
         session.add(job)
         with pytest.raises(sqlalchemy.exc.IntegrityError):
@@ -143,8 +124,8 @@ class TestJob(object):
 
     def test_job_complete(self, session):
         """A job with all required fields should be added to DB."""
-        job = models.Job(build_id=1, product_id=1, state=models.JobStatus.PASSED,
-                         allow_failure=False, started_at=datetime.now())
+        job = models.Job(build_id=1, product_id=1,
+                         state=models.JobStatus.PASSED, allow_failure=False)
 
         session.add(job)
         session.commit()
