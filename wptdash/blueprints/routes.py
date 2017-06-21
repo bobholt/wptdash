@@ -140,19 +140,19 @@ def add_pull_request():
     pr_data = data['pull_request']
     pr_head = pr_data['head']
     pr_base = pr_data['base']
+    merger = None
 
     creator, _ = models.get_or_create(
         db.session, models.GitHubUser, id=data['sender']['id']
     )
     creator.login = data['sender']['login']
 
-    merger, _ = models.get_or_create(
-        db.session, models.GitHubUser,
-        id=pr_data['merged_by']['id']
-    ) if pr_data['merged_by'] else None, False
-
-    if merger:
-        creator.name = pr_data['merged_by']['login']
+    if pr_data['merged_by']:
+        merger, _ = models.get_or_create(
+            db.session, models.GitHubUser,
+            id=pr_data['merged_by']['id']
+        )
+        merger.login = pr_data['merged_by']['login']
 
     head_commit_user, _ = models.get_or_create(
         db.session, models.GitHubUser,
@@ -337,7 +337,7 @@ def add_build():
     )
 
     if not pr:
-        return 'Not Found', 404
+        return 'Pull request data for this build does not exist in the database.', 422
 
     head_commit, _ = models.get_or_create(
         db.session, models.Commit,
@@ -439,7 +439,7 @@ def update_test_mirror():
     )
 
     if not pr:
-        return 'Not Found', 404
+        return 'Pull request data for this mirror does not exist in the database.', 422
 
     pr.mirror = pr.mirror or models.TestMirror()
     pr.mirror.url = data['url'] if request.method == 'POST' else None
@@ -536,7 +536,7 @@ def add_stability_check():
     )
 
     if not pr:
-        return 'Not Found', 404
+        return 'Pull Request data for this build job does not exist in the database.', 422
 
     build, _ = models.get_or_create(
         db.session, models.Build, id=data['build']['id']

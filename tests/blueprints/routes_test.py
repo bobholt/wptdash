@@ -277,6 +277,22 @@ class TestAddPullRequest(object):
                                                   '%Y-%m-%dT%H:%M:%SZ')
         assert not pr.closed_at
 
+    def test_merger_data(self, client, session):
+        """Complete payload PLUS merger data creates merger ref in db."""
+        payload = deepcopy(github_webhook_payload)
+        payload['pull_request']['merged_by'] = {
+            'id': 6752317, 'login': 'baxterthehacker'
+        }
+
+        rv = client.post('/api/pull', data=json.dumps(payload),
+                         content_type='application/json')
+        pr = session.query(models.PullRequest).filter(
+            models.PullRequest.id == github_webhook_payload['pull_request']['id']
+        ).one_or_none()
+
+        assert pr.creator
+        assert pr.creator.login == 'baxterthehacker'
+
 
 class TestAddBuild(object):
 
