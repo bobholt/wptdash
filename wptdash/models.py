@@ -303,7 +303,7 @@ class PullRequest(db.Model):
     base_repository = db.relationship('Repository',
                                       foreign_keys=[base_repo_id])
     mirror = db.relationship('TestMirror', back_populates='pull_request',
-                             uselist=False)
+                             uselist=False, cascade='all, delete-orphan')
     watchers = db.relationship('GitHubUser', secondary=USER_PR,
                                back_populates='prs_watching')
 

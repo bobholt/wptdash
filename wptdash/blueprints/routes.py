@@ -396,7 +396,7 @@ def add_build():
         )
         job.finished_at = datetime.strptime(
             job_data['finished_at'], DATETIME_FORMAT
-        )
+        ) if job_data['finished_at'] else None
         build.jobs.append(job)
 
     db.session.commit()
