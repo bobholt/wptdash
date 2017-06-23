@@ -332,8 +332,6 @@ def add_build():
     pr = models.get(
         db.session, models.PullRequest,
         number=verified_payload['pull_request_number'],
-        head_sha=verified_payload['head_commit'],
-        base_sha=verified_payload['base_commit']
     )
 
     if not pr:
@@ -389,7 +387,15 @@ def add_build():
         job.number = float(job_data['number'])
         job.build = build
         job.product = product
-        job.state = models.JobStatus.from_string(job_data['state'])
+
+        state_string = None
+        if job_data['status'] == 0:
+            state_string = 'passed'
+        elif job_data['state'] == 'finished':
+            state_string = 'failed'
+        else:
+            state_string = 'started'
+        job.state = models.JobStatus.from_string(state_string)
         job.allow_failure = job_data['allow_failure']
         job.started_at = datetime.strptime(
             job_data['started_at'], DATETIME_FORMAT
@@ -503,24 +509,56 @@ def add_stability_check():
                 'items': {
                     'type': 'object',
                     'properties': {
+                        'result': {
+                            'type': 'object',
+                            'properties': {
+                                'status': {
+                                    'type': 'object',
+                                    'patternProperties': {
+                                        '^(?:pass|fail|ok|timeout|error|notrun|crash)$': {
+                                            'type': 'integer'
+                                        },
+                                    },
+                                },
+                                'subtests': {
+                                    'type': 'array',
+                                    'items': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'result': {
+                                                'type': 'object',
+                                                'properties': {
+                                                    'status': {
+                                                        'type': 'object',
+                                                        'patternProperties': {
+                                                            '^(?:pass|fail|ok|timeout|error|notrun|crash)$': {
+                                                                'type': 'integer'
+                                                            },
+                                                        },
+                                                    },
+                                                    'messages': {
+                                                        'type': 'array',
+                                                        'items': {
+                                                            'type': 'string'
+                                                        },
+                                                    },
+                                                },
+                                                'required': ['status', 'messages'],
+                                            },
+                                        },
+                                        'required': ['result'],
+                                    },
+                                },
+                            },
+                            'required': ['status'],
+                        },
                         'test': {
                             'type': 'string',
                         },
-                        'subtest': {
-                            'type': ['string', 'null']
-                        },
-                        'status': {
-                            'type': 'object',
-                            'patternProperties': {
-                                '^(?:pass|fail|ok|timeout|error|notrun|crash)$': {
-                                    'type': 'integer'
-                                }
-                            }
-                        }
                     },
-                    'required': ['test', 'subtest', 'status']
-                }
-            }
+                    'required': ['test', 'result'],
+                },
+            },
         },
         'required': ['pull', 'job', 'build', 'product', 'iterations',
                      'results']
@@ -532,7 +570,6 @@ def add_stability_check():
     pr = models.get(
         db.session, models.PullRequest,
         number=data['pull']['number'],
-        head_sha=data['pull']['sha'],
     )
 
     if not pr:
@@ -561,24 +598,22 @@ def add_stability_check():
     job.message = data.get('message', None)
     job.state = models.JobStatus.from_string(data['job']['status'])
 
-    for result_data in data.get('results', []):
+    for test_data in data.get('results', []):
         test, _ = models.get_or_create(
             db.session,
             models.Test,
-            id=result_data['subtest'] or result_data['test']
+            id=test_data['test']
         )
-        if result_data['subtest']:
-            test.parent_id = result_data['test']
 
-        result, _ = models.get_or_create(
+        test_result, _ = models.get_or_create(
             db.session,
             models.JobResult,
             test_id=test.id,
             job_id=job.id,
         )
-        result.iterations = data['iterations']
+        test_result.iterations = data['iterations']
 
-        for status_name, count in result_data['status'].items():
+        for status_name, count in test_data['result']['status'].items():
             status, _ = models.get_or_create(
                 db.session,
                 models.StabilityStatus,
@@ -587,6 +622,33 @@ def add_stability_check():
                 status=models.TestStatus.from_string(status_name)
             )
             status.count = count
+
+        for subtest_data in test_data['result'].get('subtests', []):
+            subtest, _ = models.get_or_create(
+                db.session,
+                models.Test,
+                id=subtest_data['test']
+            )
+            subtest.parent = test
+
+            subtest_result, _ = models.get_or_create(
+                db.session,
+                models.JobResult,
+                test_id=subtest.id,
+                job_id=job.id,
+            )
+            subtest_result.iterations = data['iterations']
+            subtest_result.messages = json.dumps(subtest_data['result']['messages'])
+
+            for subtest_status_name, count in subtest_data['result']['status'].items():
+                subtest_status, _ = models.get_or_create(
+                    db.session,
+                    models.StabilityStatus,
+                    job_id=job.id,
+                    test_id=subtest.id,
+                    status=models.TestStatus.from_string(subtest_status_name)
+                )
+                subtest_status.count = count
 
     db.session.commit()
     return update_github_comment(pr)

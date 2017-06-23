@@ -234,6 +234,7 @@ class JobResult(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('job.id'), primary_key=True)
     test_id = db.Column(db.Text, db.ForeignKey('test.id'), primary_key=True)
     iterations = db.Column(db.Integer, nullable=False)
+    messages = db.Column(db.Text)
 
     job = db.relationship('Job', back_populates='tests')
     test = db.relationship('Test', back_populates='jobs')
@@ -338,7 +339,7 @@ class StabilityStatus(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, nullable=False)
-    test_id = db.Column(db.Integer, nullable=False)
+    test_id = db.Column(db.Text, nullable=False)
     status = db.Column(db.Enum(TestStatus), nullable=False)
     count = db.Column(db.Integer, nullable=False)
 

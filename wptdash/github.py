@@ -80,7 +80,6 @@ class GitHub(object):
 
     def post_comment(self, issue_number, body):
         """Create or update comment in pull request comment section."""
-        logging.error("COMMENT: PR %s: %s", issue_number, body)
         user = self.get(urljoin(self.base_url, "/user")).json()
         issue_comments_url = urljoin(self.base_url,
                                      "issues/%s/comments" % issue_number)
