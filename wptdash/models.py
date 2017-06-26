@@ -239,7 +239,8 @@ class JobResult(db.Model):
     job = db.relationship('Job', back_populates='tests')
     test = db.relationship('Test', back_populates='jobs')
     statuses = db.relationship('StabilityStatus',
-                               primaryjoin="and_(foreign(JobResult.job_id)==remote(StabilityStatus.job_id), foreign(JobResult.test_id)==remote(StabilityStatus.test_id))")
+                               primaryjoin="and_(foreign(JobResult.job_id)==remote(StabilityStatus.job_id), foreign(JobResult.test_id)==remote(StabilityStatus.test_id))",
+                               uselist=True)
 
 
 class Product(db.Model):

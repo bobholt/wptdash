@@ -24,7 +24,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Build {{build_number}} details</title>
-    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel=stylesheet href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
   </head>
   <body class="container">
     <div class="page-header">
@@ -33,7 +34,7 @@
         {% if build %}
           <small>
             for pull request
-            <a href="{{ url_for('wptdash.pull_detail', pull_number=build.pull_request.number) }}">{{ build.pull_request.number }}</a>
+            <a href="{{ url_for('routes.pull_detail', pull_number=build.pull_request.number) }}">{{ build.pull_request.number }}</a>
           </small>
         {% endif %}
       </h1>
@@ -44,7 +45,7 @@
         No information to display for Build {{build_number}}.
       </p>
       <p>
-        <a href="{{ url_for('wptdash.main') }}">Home</a>
+        <a href="{{ url_for('routes.main') }}">Home</a>
       </p>
     {% else %}
       <dl>
@@ -82,8 +83,11 @@
           </thead>
           <tbody>
             {% for job in build.jobs|sort(attribute='id') %}
+              {% set job_number_encoded = job.number|urlencode %}
               <tr class="{{job_status_classes[job.state.name]}}">
-                <td>{{ job.number }}</td>
+                <td>
+                  <a href="{{ url_for('routes.job_detail', job_number=job_number_encoded) }}">{{ job.number }}</a>
+                </td>
                 <td>{{ job.product.name|replace(':', ' ')|title }}</td>
                 <td>{{ job.state.name|capitalize }}</td>
                 <td>{{ job.started_at }}</td>

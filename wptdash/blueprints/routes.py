@@ -13,7 +13,6 @@ from datetime import datetime
 from flask import Blueprint, g, render_template, request
 from jsonschema import validate
 import json
-import logging
 import re
 from urllib.parse import parse_qs
 
@@ -27,7 +26,7 @@ ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
-bp = Blueprint('wptdash', __name__)
+bp = Blueprint('routes', __name__)
 
 
 @bp.route('/')
@@ -54,6 +53,14 @@ def build_detail(build_number):
     models = g.models
     build = models.get(db.session, models.Build, number=build_number)
     return render_template('build.html', build=build, build_number=build_number)
+
+
+@bp.route('/job/<string:job_number>')
+def job_detail(job_number):
+    db = g.db
+    models = g.models
+    job = models.get(db.session, models.Job, number=job_number)
+    return render_template('job.html', job=job, job_number=job_number)
 
 
 @bp.route('/api/pull', methods=['POST'])

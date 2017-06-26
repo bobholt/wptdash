@@ -38,7 +38,8 @@ def create_app(config=None):
 
 def register_blueprints(app):
     """ Registers all blueprint modules. """
-    import wptdash.blueprints.routes as mod
-    if hasattr(mod, 'bp'):
-        app.register_blueprint(mod.bp)
+    for name in find_modules('wptdash.blueprints'):
+        mod = import_string(name)
+        if hasattr(mod, 'bp'):
+            app.register_blueprint(mod.bp)
     return None

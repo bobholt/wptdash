@@ -9,7 +9,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Web Platform Tests PR Status</title>
-    <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel=stylesheet href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
   </head>
   <body class="container">
     <div class="page-header">
@@ -32,8 +33,8 @@
 
           {% for pull in pulls %}
             <tr class="{{pr_status_classes[pull.state.name]}}">
-              <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.number }}</a></td>
-              <td><a href="{{ url_for('wptdash.pull_detail', pull_number=pull.number) }}">{{ pull.title }}</a></td>
+              <td><a href="{{ url_for('routes.pull_detail', pull_number=pull.number) }}">{{ pull.number }}</a></td>
+              <td><a href="{{ url_for('routes.pull_detail', pull_number=pull.number) }}">{{ pull.title }}</a></td>
               <td>{{ pull.state.name }}</td>
               <td>{{ pull.updated_at }}</td>
             </tr>
