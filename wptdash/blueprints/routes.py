@@ -619,6 +619,7 @@ def add_stability_check():
             job_id=job.id,
         )
         test_result.iterations = data['iterations']
+        test_result.consistent = True
 
         for status_name, count in test_data['result']['status'].items():
             status, _ = models.get_or_create(
@@ -629,6 +630,8 @@ def add_stability_check():
                 status=models.TestStatus.from_string(status_name)
             )
             status.count = count
+            if (count < data['iterations']):
+                test_result.consistent = False
 
         for subtest_data in test_data['result'].get('subtests', []):
             subtest, _ = models.get_or_create(
@@ -646,6 +649,7 @@ def add_stability_check():
             )
             subtest_result.iterations = data['iterations']
             subtest_result.messages = json.dumps(subtest_data['result']['messages'])
+            subtest_result.consistent = True
 
             for subtest_status_name, count in subtest_data['result']['status'].items():
                 subtest_status, _ = models.get_or_create(
@@ -656,6 +660,9 @@ def add_stability_check():
                     status=models.TestStatus.from_string(subtest_status_name)
                 )
                 subtest_status.count = count
+                if (count < data['iterations']):
+                    subtest_result.consistent = False
+                    test_result.consistent = False
 
     db.session.commit()
     return update_github_comment(pr)

@@ -235,6 +235,7 @@ class JobResult(db.Model):
     test_id = db.Column(db.Text, db.ForeignKey('test.id'), primary_key=True)
     iterations = db.Column(db.Integer, nullable=False)
     messages = db.Column(db.Text)
+    consistent = db.Column(db.Boolean, nullable=False)
 
     job = db.relationship('Job', back_populates='tests')
     test = db.relationship('Test', back_populates='jobs')
