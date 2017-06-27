@@ -9,8 +9,6 @@ Finished: {{ build.finished_at }}
   <tr>
     <th>Product</th>
     <th>Status</th>
-    <th>Started</th>
-    <th>Ended</th>
     <th>Allowed Failure</th>
     <th>Links</th>
   </tr>
@@ -18,8 +16,6 @@ Finished: {{ build.finished_at }}
   <tr>
     <td>{{ job.product.name|replace(':', ' ')|title }}</td>
     <td>{{ job.state.name|capitalize }}</td>
-    <td>{{ "{%H:%M:%S}"|format(job.started_at) }}</td>
-    <td>{{ "{%H:%M:%S}"|format(job.finished_at) }}</td>
     <td>{{ 'Yes' if job.allow_failure else 'No' }}</td>
     <td>
       <a href="http://45.55.181.25/job/{{job.number}}">Dashboard</a> |
