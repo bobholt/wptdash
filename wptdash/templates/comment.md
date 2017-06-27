@@ -1,4 +1,3 @@
-{% if pull.builds %}
 {% set build = pull.builds | sort(attribute='number', reverse=True) | first %}
 # Build {{ build.status.name }}
 
@@ -28,10 +27,3 @@ View more information about this build on:
 
 - [WPT Results Dashboard](http://45.55.181.25/build/{{build.number}})
 - [TravisCI](https://travis-ci.org/bobholt/web-platform-tests/builds/{{build.id}})
-
-{% else %}
-# Build Status
-
-No builds to show.
-{% endif %}
-
