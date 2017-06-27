@@ -34,6 +34,7 @@
         <h2>
           {{ job.product.name|replace(':', ' ')|title  }}
         </h2>
+        <p><a href="https://travis-ci.org/bobholt/web-platform-tests/jobs/{{job.id}}">View on TravisCI</a></p>
       {% endif %}
     </div>
 
