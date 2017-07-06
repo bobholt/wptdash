@@ -3,11 +3,4 @@
   gather_facts: yes
   become: yes
   roles:
-    - config
-    - db
-    - nginx
-    - flask
-    - uwsgi
-  handlers:
-    - name: restart nginx
-      service: name=nginx state=restarted
+    - {role: base, tags: base}

@@ -1,11 +1,12 @@
 from setuptools import setup, find_packages
 
+
 setup(
     name='wptdash',
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,
     install_requires=[
-        'flask', 'flask-sqlalchemy', 'jsonschema', 'requests',
+        'flask', 'flask-sqlalchemy', 'jsonschema', 'pyOpenSSL', 'requests',
     ],
     setup_requires=[
         'pytest-runner',
@@ -13,4 +14,5 @@ setup(
     tests_require=[
         'pytest', 'pytest-cov', 'pytest-mock'
     ],
+    python_requires='>=3',
 )

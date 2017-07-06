@@ -53,23 +53,11 @@ box. Git should come out of the box.
   - You will create a password for this user. Keep it secret. Keep it safe.
 3. Ensure the new user is able to `sudo`.
   - `adduser wptdash sudo` as root
-4. Log into the server as the new user.
-5. Create `.vault_pass` in the wptdash user's home directory. The contents
-   of this file should only consist of the ansible vault password that
-   used to create `wptdash/ansible/group_vars/all/vault`.
-6. Fork this repository and clone it into the user's home directory.
-  - `git clone https://github.com/<your user name>/wptdash.git`
-  - You will be editing a file under version control, so you should create your
-    own fork and store your changes there.
-7. Run install script to install system dependencies.
-  -`sudo -H ./install.sh`
-8. Install Ansible.
-  - `sudo -H pip install ansible`
-9. Change into the `ansible` directory and run the provisioning script.
-  - `cd wptdash/ansible`
-  - `sudo ansible-playbook provision.yml`
-  - Note: this must be run from the `wptdash/ansible` directory, or it
-    will fail.
-  - **Note:** This does not install any of the python modules into virtual_env,
-    but at the system level. This is possible with Ansible, just not implemented
-    yet.
+4. Ensure you can log into this user with passwordless ssh.
+5. Log into the server as the new user.
+6. Run the `run-playbook.sh` script with to provision the target (staging or production), using the user you created in step 2.
+  - `./run-playbook.sh provision staging --user=wptdash`
+  - This will ask for the SUDO password for the user. This is the password you created in step 2.
+7. Run the `run-playbook.sh` script to configure the target (staging or production), using the user you created in step 2.
+  - `./run-playbook.sh configure staging --user=wptdash`
+  - This will ask for the SUDO password for the user. This is the password you created in step 2.

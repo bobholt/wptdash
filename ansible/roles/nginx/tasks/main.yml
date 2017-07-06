@@ -1,9 +1,15 @@
-- name: Install nginx
-  apt:
-    name: nginx
-    state: present
+# Generate nginx config files (and ssl configuration, if ssl was specified),
+# rolling back changes if any part of the config is invalid.
 
-- name: Ensure default nginx server is not present
+- include: ssl.yml
+  when: ssl
+
+- name: create path for server logs
+  file:
+    path: "{{site_path}}/logs"
+    state: directory
+
+- name: ensure default nginx server is not present
   file:
     path: /etc/nginx/sites-enabled/default
     state: absent
@@ -13,12 +19,16 @@
   shell: touch {{item.dest}}
   args:
     creates: "{{item.dest}}"
-  with_items: "{{confs + shared}}"
+  with_flattened:
+    - "{{confs}}"
+    - "{{shared}}"
   notify: reload nginx
 
 - name: backup existing nginx config files
   shell: cp {{item.dest}} {{item.dest}}.backup
-  with_items: "{{confs + shared}}"
+  with_flattened:
+    - "{{confs}}"
+    - "{{shared}}"
   notify: reload nginx
 
 - name: generate new nginx config files
@@ -26,7 +36,9 @@
     src: "{{item.file}}"
     dest: "{{item.dest}}"
   register: nginx_conf
-  with_items: "{{confs + shared}}"
+  with_flattened:
+    - "{{confs}}"
+    - "{{shared}}"
   notify: reload nginx
 
 - name: ensure nginx config is valid
@@ -38,7 +50,9 @@
 
 - name: remove temporary backups if new nginx config files are valid
   file: path={{item.dest}}.backup state=absent
-  with_items: "{{confs + shared}}"
+  with_flattened:
+    - "{{confs}}"
+    - "{{shared}}"
   when: nginx_test_valid | success
   notify: reload nginx
 

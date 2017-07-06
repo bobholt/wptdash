@@ -93,3 +93,6 @@ ENV/
 
 # Config with secrets
 config.txt
+
+# Vagrant
+.vagrant

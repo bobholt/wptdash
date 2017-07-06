@@ -1,32 +1,5 @@
 ---
 
-- name: Add the PostgreSQL public GPG key to the apt repo
-  apt_key:
-    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    state: present
-
-- name: Add PostgreSQL to the sources list
-  apt_repository:
-    repo: 'deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main'
-    update_cache: yes
-    state: present
-
-- name: Install PostgreSQL
-  apt:
-    name: "{{ item }}"
-    update_cache: yes
-    state: latest
-  with_items:
-    - libpq-dev
-    - postgresql-9.6
-    - postgresql-contrib-9.6
-    - postgresql-client-9.6
-
-- name: Install psycopg2
-  pip:
-    name: psycopg2
-    state: latest
-
 - name: Ensure the PostgreSQL service is running
   service:
     name: postgresql
