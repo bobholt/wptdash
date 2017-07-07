@@ -6,39 +6,14 @@
 Started: {{ build.started_at }}
 Finished: {{ build.finished_at }}
 
-<table>
-  <tr>
-    <th>Product</th>
-    <th>Status</th>
-    <th>Stability</th>
-    <th>Allowed Failure</th>
-    <th>Links</th>
-  </tr>
-  {% for job in build.jobs|sort(attribute='id') %}
-  {% set inconsistent_tests = job.tests|selectattr("consistent", "sameas", false)|list %}
-  <tr>
-    <td>{{ job.product.name|replace(':', ' ')|title }}</td>
-    <td>{{ job.state.name|capitalize }}</td>
-    <td>{{ 'Unstable' if inconsistent_tests|length else 'Stable'}}</td>
-    <td>{{ 'Yes' if job.allow_failure else 'No' }}</td>
-    <td>
-      <a href="http://45.55.181.25/job/{{job.number}}">Dashboard</a> |
-      <a href="https://travis-ci.org/bobholt/web-platform-tests/jobs/{{job.id}}">TravisCI</a></td>
-  </tr>
-  {% endfor %}
-</table>
-
-View more information about this build on:
-
-- [WPT Results Dashboard](http://45.55.181.25/build/{{build.number}})
-- [TravisCI](https://travis-ci.org/bobholt/web-platform-tests/builds/{{build.id}})
-
 {% if has_unstable %}
 <h2>Unstable Results</h2>
   {% for job in build.jobs|sort(attribute='id') %}
   {% set inconsistent_tests = job.tests|selectattr("consistent", "sameas", false)|list %}
   {% if inconsistent_tests|length %}
-  <h3>{{ job.product.name|replace(':', ' ')|title }}</h3>
+  <h3>{{ job.product.name|replace(':', ' ')|title }}<small>{{' (failures allowed)' if job.allow_failure else ''}}</small></h3>
+  <p>View in: <a href="http://45.55.181.25/job/{{job.number}}">Dashboard</a> |
+      <a href="https://travis-ci.org/bobholt/web-platform-tests/jobs/{{job.id}}">TravisCI</a></p>
   <table>
     <tr>
       <th>Test</th>
@@ -71,4 +46,11 @@ View more information about this build on:
   </table>
   {% endif %}
   {% endfor %}
+{% else %}
+
+View more information about this build on:
+
+- [WPT Results Dashboard](http://45.55.181.25/build/{{build.number}})
+- [TravisCI](https://travis-ci.org/bobholt/web-platform-tests/builds/{{build.id}})
+
 {% endif %}
