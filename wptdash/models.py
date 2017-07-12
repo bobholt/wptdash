@@ -168,8 +168,7 @@ class Commit(db.Model):
     __tablename__ = 'commit'
 
     sha = db.Column(db.String, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('github_user.id'),
-                        nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('github_user.id'))
 
     user = db.relationship('GitHubUser', back_populates='commits')
 

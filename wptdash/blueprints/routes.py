@@ -296,7 +296,10 @@ def add_build():
                             'enum': ['created', 'queued', 'started', 'passed',
                                      'failed', 'errored', 'finished']
                         },
-                        'started_at': {'$ref': '#/definitions/date_time'},
+                        'started_at': {'oneOf': [
+                            {'$ref': '#/definitions/date_time'},
+                            {'type': 'null'},
+                        ]},
                         'finished_at': {'oneOf': [
                             {'$ref': '#/definitions/date_time'},
                             {'type': 'null'},
@@ -311,7 +314,7 @@ def add_build():
         },
         'required': ['id', 'number', 'head_commit', 'base_commit',
                      'pull_request', 'pull_request_number', 'status',
-                     'started_at', 'finished_at', 'repository'],
+                     'repository'],
     }
 
     travis = Travis()
@@ -364,12 +367,16 @@ def add_build():
     build.status = models.BuildStatus.from_string(
         verified_payload['status_message']
     )
-    build.started_at = datetime.strptime(
-        verified_payload['started_at'], DATETIME_FORMAT
-    )
-    build.finished_at = datetime.strptime(
-        verified_payload['finished_at'], DATETIME_FORMAT
-    )
+    if verified_payload['started_at']:
+        build.started_at = datetime.strptime(
+            verified_payload['started_at'], DATETIME_FORMAT
+        )
+
+    if verified_payload['finished_at']:
+        build.finished_at = datetime.strptime(
+            verified_payload['finished_at'], DATETIME_FORMAT
+        )
+
     build.jobs = build.jobs or []
 
     for job_data in verified_payload['matrix']:
@@ -404,12 +411,15 @@ def add_build():
             state_string = 'started'
         job.state = models.JobStatus.from_string(state_string)
         job.allow_failure = job_data['allow_failure']
-        job.started_at = datetime.strptime(
-            job_data['started_at'], DATETIME_FORMAT
-        )
-        job.finished_at = datetime.strptime(
-            job_data['finished_at'], DATETIME_FORMAT
-        ) if job_data['finished_at'] else None
+
+        if job_data['started_at']:
+            job.started_at = datetime.strptime(
+                job_data['started_at'], DATETIME_FORMAT
+            )
+        if job_data['finished_at']:
+            job.finished_at = datetime.strptime(
+                job_data['finished_at'], DATETIME_FORMAT
+            )
         build.jobs.append(job)
 
     db.session.commit()
