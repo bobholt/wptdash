@@ -2,7 +2,7 @@
 # here will allow nginx to respond to requests made to that FQDN instead of the
 # production server's FQDN. This is likely the only change you will need to
 # make between production and staging.
-45.55.181.25
+75.101.233.1 site_fqdn=75.101.233.1
 # 54.209.50.181 site_fqdn=wptdash-staging.web-platform-tests.org
 
 [all:vars]

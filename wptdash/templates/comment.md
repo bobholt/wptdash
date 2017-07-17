@@ -12,8 +12,8 @@ Finished: {{ build.finished_at }}
   {% set inconsistent_tests = job.tests|selectattr("consistent", "sameas", false)|list %}
   {% if inconsistent_tests|length %}
   <h3>{{ job.product.name|replace(':', ' ')|title }}<small>{{' (failures allowed)' if job.allow_failure else ''}}</small></h3>
-  <p>View in: <a href="http://45.55.181.25/job/{{job.number}}">Dashboard</a> |
-      <a href="https://travis-ci.org/bobholt/web-platform-tests/jobs/{{job.id}}">TravisCI</a></p>
+  <p>View in: <a href="http://{{app_domain}}/job/{{job.number}}">Dashboard</a> |
+      <a href="https://travis-ci.org/{{org_name}}/{{repo_name}}/jobs/{{job.id}}">TravisCI</a></p>
   <table>
     <tr>
       <th>Test</th>
@@ -50,7 +50,7 @@ Finished: {{ build.finished_at }}
 
 View more information about this build on:
 
-- [WPT Results Dashboard](http://45.55.181.25/build/{{build.number}})
-- [TravisCI](https://travis-ci.org/bobholt/web-platform-tests/builds/{{build.id}})
+- [WPT Results Dashboard](http://{{app_domain}}/build/{{build.number}})
+- [TravisCI](https://travis-ci.org/{{org_name}}/{{repo_name}}/builds/{{build.id}})
 
 {% endif %}

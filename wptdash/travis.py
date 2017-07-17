@@ -21,7 +21,10 @@ COMMENT_ENV_VAR = CONFIG.get('Travis', 'COMMENT_ENV_VAR')
 
 
 def check_authorized(signature, public_key, payload):
-    """Reformat PEM-encoded public key for pyOpenSSL, verify signature."""
+    """Reformat PEM-encoded public key for pyOpenSSL, verify signature.
+
+    See: https://docs.travis-ci.com/user/notifications/#Verifying-Webhook-requests
+    """
     pkey_public_key = load_publickey(FILETYPE_PEM, public_key)
     certificate = X509()
     certificate.set_pubkey(pkey_public_key)

@@ -26,6 +26,9 @@ ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
+RE_PRODUCT = re.compile(r'PRODUCT=([\w:]+)')
+RE_SAUCE = re.compile(r'^sauce:')
+
 bp = Blueprint('routes', __name__)
 
 
@@ -35,7 +38,7 @@ def main():
     models = g.models
     pulls = db.session.query(models.PullRequest).order_by(
         models.PullRequest.created_at.desc()
-    ).all()
+    ).limit(100).all()
     return render_template('index.html', pulls=pulls)
 
 
@@ -52,7 +55,8 @@ def build_detail(build_number):
     db = g.db
     models = g.models
     build = models.get(db.session, models.Build, number=build_number)
-    return render_template('build.html', build=build, build_number=build_number)
+    return render_template('build.html', build=build, build_number=build_number,
+                           org_name=ORG, repo_name=REPO)
 
 
 @bp.route('/job/<string:job_number>')
@@ -60,7 +64,8 @@ def job_detail(job_number):
     db = g.db
     models = g.models
     job = models.get(db.session, models.Job, number=job_number)
-    return render_template('job.html', job=job, job_number=job_number)
+    return render_template('job.html', job=job, job_number=job_number,
+                           org_name=ORG, repo_name=REPO)
 
 
 @bp.route('/api/pull', methods=['POST'])
@@ -377,53 +382,58 @@ def add_build():
             verified_payload['finished_at'], DATETIME_FORMAT
         )
 
-    build.jobs = build.jobs or []
-
     for job_data in verified_payload['matrix']:
-        product_env = next(
-            (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
-            None
-        )
-        product_name = re.search(
-            r'PRODUCT=([\w:]+)', product_env
-        ).group(1) if product_env else None
-
-        if not product_name:
-            continue
-
-        product_name = re.sub(r'^sauce:', '', product_name)
-        product, _ = models.get_or_create(
-            db.session, models.Product, name=product_name
-        )
-        job, _ = models.get_or_create(
-            db.session, models.Job, id=job_data['id']
-        )
-        job.number = float(job_data['number'])
-        job.build = build
-        job.product = product
-
-        state_string = None
-        if job_data['status'] == 0:
-            state_string = 'passed'
-        elif job_data['state'] == 'finished':
-            state_string = 'failed'
-        else:
-            state_string = 'started'
-        job.state = models.JobStatus.from_string(state_string)
-        job.allow_failure = job_data['allow_failure']
-
-        if job_data['started_at']:
-            job.started_at = datetime.strptime(
-                job_data['started_at'], DATETIME_FORMAT
-            )
-        if job_data['finished_at']:
-            job.finished_at = datetime.strptime(
-                job_data['finished_at'], DATETIME_FORMAT
-            )
-        build.jobs.append(job)
+        add_job_to_session(job_data, build)
 
     db.session.commit()
     return update_github_comment(pr)
+
+
+def normalize_product_name(product_name):
+    return RE_SAUCE.sub('', product_name)
+
+
+def add_job_to_session(job_data, build):
+    db = g.db
+    models = g.models
+    product_env = next(
+        (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
+        None
+    )
+    product_name = normalize_product_name(RE_PRODUCT.search(
+        product_env
+    ).group(1)) if product_env else None
+
+    if not product_name:
+        return
+
+    product, _ = models.get_or_create(
+        db.session, models.Product, name=product_name
+    )
+    job, _ = models.get_or_create(
+        db.session, models.Job, id=job_data['id']
+    )
+    job.number = float(job_data['number'])
+    job.build = build
+    job.product = product
+
+    state_string = None
+    if job_data['status'] == 0:
+        job.state = models.JobStatus.PASSED
+    elif job_data['state'] == 'finished':
+        job.state = models.JobStatus.FAILED
+    else:
+        job.state = models.JobStatus.STARTED
+    job.allow_failure = job_data['allow_failure']
+
+    if job_data['started_at']:
+        job.started_at = datetime.strptime(
+            job_data['started_at'], DATETIME_FORMAT
+        )
+    if job_data['finished_at']:
+        job.finished_at = datetime.strptime(
+            job_data['finished_at'], DATETIME_FORMAT
+        )
 
 
 @bp.route('/api/test-mirror', methods=['POST', 'DELETE'])
@@ -600,7 +610,7 @@ def add_stability_check():
     build.head_sha = data['pull']['sha']
     build.status = build.status or models.BuildStatus.from_string('pending')
 
-    product_name = re.sub(r'^sauce:', '', data['product'])
+    product_name = normalize_product_name(data['product'])
     product, _ = models.get_or_create(
         db.session, models.Product, name=product_name
     )

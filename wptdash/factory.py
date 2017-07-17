@@ -9,6 +9,7 @@
     more detailed forms of that information.
 """
 
+import requests_cache
 from flask import Flask, g
 from wptdash.database import db
 from werkzeug.utils import find_modules, import_string
@@ -21,6 +22,8 @@ def create_app(config=None):
 
     app.config.update(config or {})
     app.config.from_envvar('WPTDASH_SETTINGS', silent=True)
+
+    requests_cache.install_cache(backend='memory', expire_after=180)
 
     db.init_app(app)
     with app.app_context():

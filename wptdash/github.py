@@ -12,6 +12,7 @@ import requests
 
 CONFIG = configparser.ConfigParser()
 CONFIG.readfp(open(r'config.txt'))
+GH_COMMENTER = CONFIG.get('GitHub', 'GH_COMMENTER')
 GH_TOKEN = CONFIG.get('GitHub', 'GH_TOKEN')
 ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
@@ -31,15 +32,14 @@ class GitHub(object):
         self.repo = REPO
         self.base_url = "https://api.github.com/repos/%s/%s/" % (ORG, REPO)
 
-    def _headers(self, headers):
+    # default object is safe because it is not being modified
+    def _headers(self, headers={}):  # pylint: disable=dangerous-default-value
         """Extend existing HTTP headers and return new value."""
-        if headers is None:
-            headers = {}
         return_value = self.headers.copy()
         return_value.update(headers)
         return return_value
 
-    def post(self, url, data, headers=None):
+    def post(self, url, data, headers={}):  # pylint: disable=dangerous-default-value
         """Serialize and POST data to given URL."""
         logging.debug("POST %s", url)
         if data is not None:
@@ -53,7 +53,7 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def patch(self, url, data, headers=None):
+    def patch(self, url, data, headers={}):  # pylint: disable=dangerous-default-value
         """Serialize and PATCH data to given URL."""
         logging.debug("PATCH %s", url)
         if data is not None:
@@ -67,7 +67,7 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def get(self, url, headers=None):
+    def get(self, url, headers={}):  # pylint: disable=dangerous-default-value
         """Execute GET request for given URL."""
         logging.debug("GET %s", url)
         resp = requests.get(
@@ -78,29 +78,19 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
+    def validate_comment_length(self, comment):
+        return len(comment) < self.max_comment_length
+
     def post_comment(self, issue_number, body):
         """Create or update comment in pull request comment section."""
-        user = self.get(urljoin(self.base_url, "/user")).json()
         issue_comments_url = urljoin(self.base_url,
                                      "issues/%s/comments" % issue_number)
         issue_comments = self.get(issue_comments_url).json()
 
-        if len(body) > self.max_comment_length:
-
-            truncation_msg = (
-                '*This report has been truncated because the ' +
-                'total content is %s characters in length, which is in ' +
-                'excess of GitHub.com\'s limit for comments (%s ' +
-                'characters).\n\n'
-            ) % (len(body), self.max_comment_length)
-
-            body = truncation_msg + \
-                body[0:self.max_comment_length - len(truncation_msg)]
-
         data = {"body": body}
 
         for issue_comment in issue_comments:
-            if issue_comment["user"]["login"] == user["login"]:
+            if issue_comment["user"]["login"] == GH_COMMENTER:
                 comment_url = urljoin(
                     self.base_url, "issues/comments/%s" % issue_comment["id"]
                 )

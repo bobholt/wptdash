@@ -20,7 +20,7 @@ hostname: "{{project_name}}"
 # as the server's DNS name. This value is overridden for Vagrant and staging
 # servers.
 # site_fqdn: "{{project_name}}.com"
-site_fqdn: "34.229.95.134"
+site_fqdn: "54.204.149.141"
 
 
 ##############
@@ -162,7 +162,7 @@ remote: bobholt
 
 # Specify any ref (eg. branch, tag, SHA) to be deployed. This ref must be
 # pushed to the remote git_repo before it can be deployed.
-commit: master
+commit: upgrade-deployment
 
 # Git repo address.
 # For private repositories: git@github.com:{{remote}}/{{project_name}}.git
@@ -189,7 +189,8 @@ db_name: wptdash
 db_user: wptdash
 github_org: bobholt
 github_repo: web-platform-tests
+github_commenter: bobholt
 
 #sensitive data
 db_password: "{{ vault_db_password }}"
-github_token: "{{ vault_github_token }}"
+github_commenter_token: "{{ vault_github_commenter_token }}"

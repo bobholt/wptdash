@@ -17,3 +17,5 @@
       service: name=nginx state=restarted
     - name: restart sshd
       service: name=ssh state=restarted
+    - name: restart uwsgi
+      systemd: name=emperor.uwsgi state=restarted
