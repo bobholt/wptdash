@@ -610,19 +610,26 @@ stability_payload = {
     "results": [
         {
             "test": "walk the dog",
-            "subtest": None,
-            "status": {
-                "pass": 5,
-                "fail": 5,
+            "result": {
+                "status": {
+                    "pass": 5,
+                    "fail": 5,
+                },
+                "subtests": [
+                    {
+                        "test": "curb the dog",
+                        "result": {
+                            "status": {
+                                "pass": 5,
+                                "fail": 5,
+                            },
+                            "messages": [
+                                "could not curb the dog",
+                            ],
+                        },
+                    },
+                ],
             }
         },
-        {
-            "test": "walk the dog",
-            "subtest": "curb the dog",
-            "status": {
-                "pass": 5,
-                "fail": 5
-            }
-        }
     ]
 }

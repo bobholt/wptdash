@@ -350,20 +350,6 @@ class TestAddBuild(object):
         with pytest.raises(ValidationError):
             client.post('/api/build', data=dict(payload=json.dumps(payload)))
 
-    def test_no_started_at(self, client, session):
-        """Payload missing started_at throws jsonschema ValidationError."""
-        payload = deepcopy(travis_webhook_payload)
-        payload.pop('started_at')
-        with pytest.raises(ValidationError):
-            client.post('/api/build', data=dict(payload=json.dumps(payload)))
-
-    def test_no_finished_at(self, client, session):
-        """Payload missing finished_at throws jsonschema ValidationError."""
-        payload = deepcopy(travis_webhook_payload)
-        payload.pop('finished_at')
-        with pytest.raises(ValidationError):
-            client.post('/api/build', data=dict(payload=json.dumps(payload)))
-
     def test_no_repository(self, client, session):
         """Payload missing repository throws jsonschema ValidationError."""
         payload = deepcopy(travis_webhook_payload)

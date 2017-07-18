@@ -49,14 +49,6 @@ class TestCommit(object):
         with pytest.raises(sqlalchemy.exc.IntegrityError):
             session.commit()
 
-    def test_commit_no_user_id(self, session):
-        """A commit without sha should throw Integrity Error."""
-        commit = models.Commit(sha='abcde12345')
-
-        session.add(commit)
-        with pytest.raises(sqlalchemy.exc.IntegrityError):
-            session.commit()
-
     def test_commit_complete(self, session):
         """A commit with all required fields should be added to DB."""
         commit = models.Commit(sha='abcde12345', user_id=1)
@@ -162,9 +154,18 @@ class TestJobResult(object):
         with pytest.raises(sqlalchemy.exc.IntegrityError):
             session.commit()
 
+    def test_job_result_no_consistent(self, session):
+        """A job_result without iterations should throw Integrity Error."""
+        job_result = models.JobResult(job_id=1, test_id='foo', iterations=10)
+
+        session.add(job_result)
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            session.commit()
+
     def test_job_result_complete(self, session):
         """A job_result with all required fields should be added to DB."""
-        job_result = models.JobResult(job_id=1, test_id='foo', iterations=10)
+        job_result = models.JobResult(job_id=1, test_id='foo', iterations=10,
+                                      consistent=False)
 
         session.add(job_result)
         session.commit()
@@ -178,8 +179,10 @@ class TestJobResult(object):
 
     def test_job_result_duplicate(self, session):
         """job_result with duplicate job_id & test_id should not be allowed."""
-        job_result = models.JobResult(job_id=1, test_id='foo', iterations=10)
-        job_result_2 = models.JobResult(job_id=1, test_id='foo', iterations=1)
+        job_result = models.JobResult(job_id=1, test_id='foo', iterations=10,
+                                      consistent=False)
+        job_result_2 = models.JobResult(job_id=1, test_id='foo', iterations=1,
+                                        consistent=True)
 
         session.add(job_result)
         session.add(job_result_2)
@@ -189,8 +192,10 @@ class TestJobResult(object):
 
     def test_job_result_some_duplicate(self, session):
         """job_result with same job_id, but different test_id is allowed."""
-        job_result_1 = models.JobResult(job_id=1, test_id='foo', iterations=10)
-        job_result_2 = models.JobResult(job_id=1, test_id='foo2', iterations=1)
+        job_result_1 = models.JobResult(job_id=1, test_id='foo', iterations=10,
+                                        consistent=False)
+        job_result_2 = models.JobResult(job_id=1, test_id='foo2', iterations=1,
+                                        consistent=True)
 
         session.add(job_result_1)
         session.add(job_result_2)

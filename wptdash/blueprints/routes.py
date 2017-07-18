@@ -572,8 +572,11 @@ def add_stability_check():
                                                 },
                                                 'required': ['status', 'messages'],
                                             },
+                                            'test': {
+                                                'type': 'string',
+                                            },
                                         },
-                                        'required': ['result'],
+                                        'required': ['result', 'test'],
                                     },
                                 },
                             },
