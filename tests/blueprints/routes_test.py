@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from pytest_mock import mocker
 
 from jsonschema.exceptions import ValidationError
+from wptdash.github import GitHub
 import wptdash.models as models
 from tests.blueprints.fixtures.payloads import (github_webhook_payload,
                                                 travis_webhook_payload,
@@ -182,10 +183,10 @@ class TestAddPullRequest(object):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_creator(self, client, session):
+    def test_no_user(self, client, session):
         """Payload missing sender throws jsonschema ValidationError."""
         payload = deepcopy(github_webhook_payload)
-        payload.pop('sender')
+        payload['pull_request'].pop('user')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
@@ -512,11 +513,13 @@ class TestAddStabilityCheck(object):
             client.post('/api/stability', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_pr(self, client, session):
+    def test_no_pr(self, client, session, mocker):
         """Returns HTTP 422 if no matching PR in database."""
+        mocker.spy(GitHub, 'get_pr')
         rv = client.post('/api/stability', data=json.dumps(stability_payload),
                          content_type='application/json')
-        assert rv.status_code == 422
+
+        assert GitHub.get_pr.call_count == 1
 
     def test_complete_payload(self, client, session):
         pull_request = models.PullRequest(state=models.PRStatus.OPEN, number=1,

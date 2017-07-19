@@ -83,6 +83,11 @@ class GitHub(object):
     def validate_comment_length(self, comment):
         return len(comment) < self.max_comment_length
 
+    def get_pr(self, issue_number):
+        """Get pull request data."""
+        pr_url = urljoin(self.base_url, "pulls/%s" % issue_number)
+        return self.get(pr_url).json()
+
     def post_comment(self, issue_number, body):
         """Create or update comment in pull request comment section."""
         issue_comments_url = urljoin(self.base_url,
