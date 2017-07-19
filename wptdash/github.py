@@ -33,13 +33,15 @@ class GitHub(object):
         self.base_url = "https://api.github.com/repos/%s/%s/" % (ORG, REPO)
 
     # default object is safe because it is not being modified
-    def _headers(self, headers={}):  # pylint: disable=dangerous-default-value
+    def _headers(self, headers=None):
         """Extend existing HTTP headers and return new value."""
+        if headers is None:
+            headers = {}
         return_value = self.headers.copy()
         return_value.update(headers)
         return return_value
 
-    def post(self, url, data, headers={}):  # pylint: disable=dangerous-default-value
+    def post(self, url, data, headers=None):
         """Serialize and POST data to given URL."""
         logging.debug("POST %s", url)
         if data is not None:
@@ -53,7 +55,7 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def patch(self, url, data, headers={}):  # pylint: disable=dangerous-default-value
+    def patch(self, url, data, headers=None):
         """Serialize and PATCH data to given URL."""
         logging.debug("PATCH %s", url)
         if data is not None:
@@ -67,7 +69,7 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def get(self, url, headers={}):  # pylint: disable=dangerous-default-value
+    def get(self, url, headers=None):
         """Execute GET request for given URL."""
         logging.debug("GET %s", url)
         resp = requests.get(

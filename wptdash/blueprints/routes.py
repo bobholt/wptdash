@@ -383,7 +383,7 @@ def add_build():
         )
 
     for job_data in verified_payload['matrix']:
-        add_job_to_session(job_data, build)
+        add_job_to_session(job_data, build, db, models)
 
     db.session.commit()
     return update_github_comment(pr)
@@ -393,9 +393,7 @@ def normalize_product_name(product_name):
     return RE_SAUCE.sub('', product_name)
 
 
-def add_job_to_session(job_data, build):
-    db = g.db
-    models = g.models
+def add_job_to_session(job_data, build, db, models):
     product_env = next(
         (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
         None

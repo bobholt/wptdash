@@ -6,12 +6,26 @@ VAGRANTFILE_API_VERSION = '2'
 # look up system cpu and ram so we can use more intelligent defaults
 LINUX = RUBY_PLATFORM =~ /linux/
 OSX = RUBY_PLATFORM =~ /darwin/
+PROD_CPUS = 1
+PROD_MEM = 500
 if OSX
   CPUS = `sysctl -n hw.ncpu`.to_i
   MEM = `sysctl -n hw.memsize`.to_i / 1024 / 1024 / 4
 elsif LINUX
   CPUS = `nproc`.to_i
   MEM = `sed -n -e '/^MemTotal/s/^[^0-9]*//p' /proc/meminfo`.to_i / 1024 / 4
+end
+
+if defined?(CPUS)
+  CPUS = [CPUS, PROD_CPUS].min
+else
+  CPUS = PROD_CPUS
+end
+
+if defined?(MEM)
+  MEM = [MEM, PROD_MEM].min
+else
+  MEM = PROD_MEM
 end
 
 # use (faster) nfs sharing on osx only

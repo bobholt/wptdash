@@ -57,7 +57,7 @@ box. Git should come out of the box.
 5. Log into the server as the new user.
 6. Run the `run-playbook.sh` script with to provision the target (staging or production), using the user you created in step 2.
   - `./run-playbook.sh provision staging --user=wptdash`
-  - This will ask for the SUDO password for the user. This is the password you created in step 2.
+  - This will ask for the sudo password for the user. This is the password you created in step 2.
 7. Run the `run-playbook.sh` script to configure the target (staging or production), using the user you created in step 2.
   - `./run-playbook.sh configure staging --user=wptdash`
   - This will ask for the SUDO password for the user. This is the password you created in step 2.
