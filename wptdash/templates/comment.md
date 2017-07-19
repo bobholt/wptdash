@@ -11,7 +11,7 @@ Finished: {{ build.finished_at }}
   {% for job in build.jobs|sort(attribute='id') %}
   {% set inconsistent_tests = job.tests|selectattr("consistent", "sameas", false)|list %}
   {% if inconsistent_tests|length %}
-  <h3>{{ job.product.name|replace(':', ' ')|title }}<small>{{' (failures allowed)' if job.allow_failure else ''}}</small></h3>
+  <h3>Browser: "{{ job.product.name|replace(':', ' ')|title }}"<small>{{' (failures allowed)' if job.allow_failure else ''}}</small></h3>
   <p>View in: <a href="http://{{app_domain}}/job/{{job.number}}">Dashboard</a> |
       <a href="https://travis-ci.org/{{org_name}}/{{repo_name}}/jobs/{{job.id}}">TravisCI</a></p>
   <table>
