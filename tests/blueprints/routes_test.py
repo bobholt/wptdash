@@ -159,88 +159,110 @@ class TestAddPullRequest(object):
 
     """Test endpoint for adding pull request data from GitHub."""
 
-    def test_no_id(self, client, session):
+    def test_no_id(self, client, session, mocker):
         """Payload missing id throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('id')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_number(self, client, session):
+    def test_no_number(self, client, session, mocker):
         """Payload missing number throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('number')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_title(self, client, session):
+    def test_no_title(self, client, session, mocker):
         """Payload missing title throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('title')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_user(self, client, session):
+    def test_no_user(self, client, session, mocker):
         """Payload missing sender throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('user')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_created_at(self, client, session):
+    def test_no_created_at(self, client, session, mocker):
         """Payload missing created_at throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('created_at')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_updated_at(self, client, session):
+    def test_no_updated_at(self, client, session, mocker):
         """Payload missing updated_at throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('updated_at')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_merged(self, client, session):
+    def test_no_merged(self, client, session, mocker):
         """Payload missing merged throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('merged')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_head(self, client, session):
+    def test_no_head(self, client, session, mocker):
         """Payload missing head throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('head')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_base(self, client, session):
+    def test_no_base(self, client, session, mocker):
         """Payload missing base throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('base')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_no_state(self, client, session):
+    def test_no_state(self, client, session, mocker):
         """Payload missing state throws jsonschema ValidationError."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request'].pop('state')
         with pytest.raises(ValidationError):
             client.post('/api/pull', data=json.dumps(payload),
                         content_type='application/json')
 
-    def test_complete_payload(self, client, session):
+    def test_complete_payload(self, client, session, mocker):
         """Complete webhook payload creates pull request object in db."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         rv = client.post('/api/pull', data=json.dumps(github_webhook_payload),
                          content_type='application/json')
         pr = session.query(models.PullRequest).filter(
@@ -278,8 +300,10 @@ class TestAddPullRequest(object):
                                                   '%Y-%m-%dT%H:%M:%SZ')
         assert not pr.closed_at
 
-    def test_merger_data(self, client, session):
+    def test_merger_data(self, client, session, mocker):
         """Complete payload PLUS merger data creates merger ref in db."""
+        mocker.patch('wptdash.blueprints.routes.validate_hmac_signature',
+                     return_value=True)
         payload = deepcopy(github_webhook_payload)
         payload['pull_request']['merged_by'] = {
             'id': 6752317, 'login': 'baxterthehacker'

@@ -74,7 +74,7 @@ def job_detail(job_number):
 
 @bp.route('/api/pull', methods=['POST'])
 def add_pull_request():
-    is_authorized = validate_hmac_signature(request.data, request.headers['X_HUB_SIGNATURE'])
+    is_authorized = validate_hmac_signature(request.data, request.headers.get('X_HUB_SIGNATURE'))
 
     if not is_authorized:
         return 'Invalid Authorization Signature.', 401
