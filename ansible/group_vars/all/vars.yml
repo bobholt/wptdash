@@ -194,3 +194,4 @@ github_commenter: bobholt
 #sensitive data
 db_password: "{{ vault_db_password }}"
 github_commenter_token: "{{ vault_github_commenter_token }}"
+github_webhook_token: "{{ vault_github_webhook_token }}"

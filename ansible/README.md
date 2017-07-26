@@ -77,11 +77,11 @@ Examples:
 1. Deploy `master` to production
   - `./run-playbook.sh deploy production --user=yourusername`
 2. Deploy the `test` branch to staging
-  - `./run-playbook.sh deploy staging --commit=test --user=yourusername`
+  - `./run-playbook.sh deploy staging commit=test --user=yourusername`
 
 Useful flags:
 
-- `--commit=branch/tag/sha`: The specific branch, tag or SHA (pushed to
+- `commit=branch/tag/sha`: The specific branch, tag or SHA (pushed to
   the repo) you would like to deploy.
 - `--private-key=~/.ssh/key_name`: if you used something other than your
   default `id_rsa.pub` public key when setting up your user.
@@ -100,7 +100,7 @@ Examples:
 1. Reconfigure production
   - `./run-playbook.sh configure production --user=yourusername`
 2. Test a configuration on staging
-  - `./run-playbook.sh configure staging --commit=test-config --user=yourusername`
+  - `./run-playbook.sh configure staging commit=test-config --user=yourusername`
 3. Update the users on the production server without restarting nginx/uWSGI:
   - `.run-playbook.sh configure production --tags=users --user=yourusername`
 

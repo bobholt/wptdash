@@ -12,6 +12,8 @@ import configparser
 from datetime import datetime
 from flask import Blueprint, g, render_template, request
 from jsonschema import validate
+import hashlib
+import hmac
 import json
 import re
 from urllib.parse import parse_qs
@@ -23,6 +25,7 @@ from wptdash.travis import Travis
 CONFIG = configparser.ConfigParser()
 CONFIG.readfp(open(r'config.txt'))
 GH_TOKEN = CONFIG.get('GitHub', 'GH_TOKEN')
+GH_WEBHOOK_TOKEN = CONFIG.get('GitHub', 'GH_WEBHOOK_TOKEN')
 ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -71,6 +74,11 @@ def job_detail(job_number):
 
 @bp.route('/api/pull', methods=['POST'])
 def add_pull_request():
+    is_authorized = validate_hmac_signature(request.data, request.headers['X_HUB_SIGNATURE'])
+
+    if not is_authorized:
+        return 'Invalid Authorization Signature.', 401
+
     db = g.db
     models = g.models
     schema = {
@@ -84,7 +92,6 @@ def add_pull_request():
         },
         'required': ['pull_request'],
     }
-
     data = request.get_json(force=True)
     validate(data, schema)
 
@@ -711,3 +718,12 @@ def add_pr_to_session(pr_data, db, models):
     pr.mirror = models.TestMirror(url=None)
 
     return pr
+
+
+def create_hmac_signature(payload_body):
+    return 'sha1=%s' % hmac.new(bytes(GH_WEBHOOK_TOKEN, 'utf-8'), payload_body,
+                                hashlib.sha1).hexdigest()
+
+
+def validate_hmac_signature(payload_body, signature):
+    return hmac.compare_digest(create_hmac_signature(payload_body), signature)
