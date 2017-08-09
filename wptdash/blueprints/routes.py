@@ -31,6 +31,8 @@ REPO = CONFIG.get('GitHub', 'REPO')
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 RE_PRODUCT = re.compile(r'PRODUCT=([\w:]+)')
+RE_JOB = re.compile(r'JOB=([\w:]+)')
+RE_TOX = re.compile(r'TOXENV=([\w:]+)')
 RE_SAUCE = re.compile(r'^sauce:')
 
 bp = Blueprint('routes', __name__)
@@ -507,16 +509,29 @@ def normalize_product_name(product_name):
 
 
 def add_job_to_session(job_data, build, db, models):
+    job_env = next(
+        (x for x in job_data['config'].get('env', []) if 'JOB=' in x),
+        None
+    )
     product_env = next(
         (x for x in job_data['config'].get('env', []) if 'PRODUCT=' in x),
         None
     )
+    tox_env = next(
+        (x for x in job_data['config'].get('env', []) if 'TOXENV=' in x),
+        None
+    )
+
     product_name = normalize_product_name(RE_PRODUCT.search(
         product_env
     ).group(1)) if product_env else None
+    job_name = RE_JOB.search(job_env).group(1) if job_env else None
+    python_version = RE_TOX.search(tox_env).group(1) if tox_env else None
 
     if not product_name:
-        return
+        product_name = job_name
+        if python_version:
+            product_name += ' in %s' % python_version
 
     product, _ = models.get_or_create(
         db.session, models.Product, name=product_name
