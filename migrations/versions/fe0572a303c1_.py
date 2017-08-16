@@ -21,47 +21,51 @@ def upgrade():
     op.create_table('github_user',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('login', sa.String(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('product',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('stability_status',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('job_id', sa.Integer(), nullable=False),
     sa.Column('test_id', sa.Text(), nullable=False),
-    sa.Column('status', sa.Enum('PASS', 'FAIL', 'OK', 'TIMEOUT', 'ERROR', 'NOTRU
-N', 'CRASH', name='teststatus'), nullable=False),
+    sa.Column('status', sa.Enum('PASS', 'FAIL', 'OK', 'TIMEOUT', 'ERROR', 'NOTRUN', 'CRASH', name='teststatus'), nullable=False),
     sa.Column('count', sa.Integer(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('test',
     sa.Column('id', sa.Text(), nullable=False),
     sa.Column('parent_id', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['parent_id'], ['test.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('commit',
     sa.Column('sha', sa.String(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['github_user.id'], ),
-    sa.PrimaryKeyConstraint('sha')
+    sa.PrimaryKeyConstraint('sha'),
+    extend_existing=True
     )
     op.create_table('repository',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('owner_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['owner_id'], ['github_user.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('pull_request',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('number', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
-    sa.Column('state', sa.Enum('OPEN', 'CLOSED', name='prstatus'), nullable=Fals
-e),
+    sa.Column('state', sa.Enum('OPEN', 'CLOSED', name='prstatus'), nullable=False),
     sa.Column('head_sha', sa.String(), nullable=False),
     sa.Column('base_sha', sa.String(), nullable=False),
     sa.Column('head_repo_id', sa.Integer(), nullable=False),
@@ -81,7 +85,8 @@ e),
     sa.ForeignKeyConstraint(['head_repo_id'], ['repository.id'], ),
     sa.ForeignKeyConstraint(['head_sha'], ['commit.sha'], ),
     sa.ForeignKeyConstraint(['merged_by'], ['github_user.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('build',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -89,41 +94,43 @@ e),
     sa.Column('pull_request_id', sa.Integer(), nullable=True),
     sa.Column('head_sha', sa.String(), nullable=True),
     sa.Column('base_sha', sa.String(), nullable=True),
-    sa.Column('status', sa.Enum('PENDING', 'PASSED', 'FIXED', 'BROKEN', 'FAILED'
-, 'STILL_FAILING', 'CANCELLED', 'ERRORED', name='buildstatus'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'PASSED', 'FIXED', 'BROKEN', 'FAILED', 'STILL_FAILING', 'CANCELLED', 'ERRORED', name='buildstatus'), nullable=False),
     sa.Column('started_at', sa.TIMESTAMP(), nullable=True),
     sa.Column('finished_at', sa.TIMESTAMP(), nullable=True),
     sa.ForeignKeyConstraint(['base_sha'], ['commit.sha'], ),
     sa.ForeignKeyConstraint(['head_sha'], ['commit.sha'], ),
     sa.ForeignKeyConstraint(['pull_request_id'], ['pull_request.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('test_mirror',
     sa.Column('pull_id', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('url', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['pull_id'], ['pull_request.id'], ),
-    sa.PrimaryKeyConstraint('pull_id')
+    sa.PrimaryKeyConstraint('pull_id'),
+    extend_existing=True
     )
     op.create_table('user_pr',
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('pull_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['pull_id'], ['pull_request.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['github_user.id'], )
+    sa.ForeignKeyConstraint(['user_id'], ['github_user.id'], ),
+    extend_existing=True
     )
     op.create_table('job',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('number', sa.Float(), nullable=True),
     sa.Column('build_id', sa.Integer(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
-    sa.Column('state', sa.Enum('CREATED', 'QUEUED', 'STARTED', 'PASSED', 'FAILED
-', 'ERRORED', 'FINISHED', name='jobstatus'), nullable=True),
+    sa.Column('state', sa.Enum('CREATED', 'QUEUED', 'STARTED', 'PASSED', 'FAILED', 'ERRORED', 'FINISHED', name='jobstatus'), nullable=True),
     sa.Column('message', sa.Text(), nullable=True),
     sa.Column('allow_failure', sa.Boolean(), nullable=False),
     sa.Column('started_at', sa.TIMESTAMP(), nullable=True),
     sa.Column('finished_at', sa.TIMESTAMP(), nullable=True),
     sa.ForeignKeyConstraint(['build_id'], ['build.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['product.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    extend_existing=True
     )
     op.create_table('job_result',
     sa.Column('job_id', sa.Integer(), nullable=False),
@@ -133,7 +140,8 @@ e),
     sa.Column('consistent', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['job_id'], ['job.id'], ),
     sa.ForeignKeyConstraint(['test_id'], ['test.id'], ),
-    sa.PrimaryKeyConstraint('job_id', 'test_id')
+    sa.PrimaryKeyConstraint('job_id', 'test_id'),
+    extend_existing=True
     )
     # ### end Alembic commands ###
 
